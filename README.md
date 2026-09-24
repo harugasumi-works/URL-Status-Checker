@@ -51,7 +51,6 @@ Built incrementally, phase by phase:
 ```
 ./gradlew run
 ```
-> Requires `--enable-preview` for structured concurrency and `LazyConstant` — make sure your `build.gradle` compiler/run tasks pass that flag.
 
 ## Testing
 ```
