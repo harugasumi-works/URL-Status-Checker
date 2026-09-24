@@ -39,16 +39,27 @@ public class Operator {
 			case int c when (c >= 400 && c < 500) -> new Fail(start, code,"Client failed to make a request.");
 			default -> new Fail(start, code,"Server failed.");
 			};
-		} catch (IOException | InterruptedException e) {
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return new Fail(Instant.now(), 0, "The scan was interrupted.");
+		} catch (IOException e) {
 			return new Fail(Instant.now(), 0,"The connection was disrupted: " + e.getMessage());
 		}
         
 	}
 	
+	private static ScanResult scan(ScanRequest req) {
+		try {
+			return new ScanResult(req.id(), req, scanOperator(req));
+		} catch (RuntimeException e) {
+			return new ScanResult(req.id(), req, new Fail(Instant.now(), 0, "Unexpected error: " + e));
+		}
+	}
+	
 	@SuppressWarnings("preview")
 	public static ExecutionResult scanAll(List<ScanRequest> requests, Consumer<ScanResult> onResult, Runnable  onTaskFailure) throws InterruptedException {
 		List<Callable<ScanResult>> tasks = requests.stream()
-				.<Callable<ScanResult>>map(req -> () -> new ScanResult(req.id() ,req, scanOperator(req)))
+				.<Callable<ScanResult>>map(req -> () -> scan(req))
 				.toList();
 		
 		var joiner = new CustomJoin(onResult, onTaskFailure);

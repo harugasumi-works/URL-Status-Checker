@@ -21,12 +21,10 @@ import javafx.scene.control.SplitMenuButton;
 
 public class ButtonFactory {
 	
-	static List<ScanRequest> requests = List.of();
-
 	public static Button scanButton() {
 		Button button = new Button("Scan");
 		button.setOnAction(_ -> {
-			requests = UILogic.items.stream().<ScanRequest>mapMulti((item, consumer) -> {
+			List<ScanRequest> requests = UILogic.items.stream().<ScanRequest>mapMulti((item, consumer) -> {
 				switch (item) {
 					case RowItem.Pending(ScanRequest request) -> consumer.accept(request);
 					case RowItem.Scanned(ScanResult result) -> consumer.accept(result.context());
@@ -105,8 +103,7 @@ public class ButtonFactory {
 			}
 		});
 
-		if (requests.isEmpty())
-			button.disableProperty().bind(UILogic.lastScan.isNull());
+		button.disableProperty().bind(UILogic.lastScan.isNull());
 		return button;
 	}
 

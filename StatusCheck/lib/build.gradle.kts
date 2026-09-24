@@ -30,9 +30,22 @@ tasks.withType<JavaCompile> {
 }
 
 tasks.named<Test>("test") {
-    // Use JUnit Platform for unit tests.
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags("integration")
+    }
     jvmArgs("--enable-preview")
+}
+
+tasks.register<Test>("integrationTest") {
+    description = "Runs the tests tagged 'integration' (makes real HTTPS requests)."
+    group = "verification"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform {
+        includeTags("integration")
+    }
+    jvmArgs("--enable-preview")
+    shouldRunAfter(tasks.named("test"))
 }
 
 tasks.named<JavaExec>("run") {
