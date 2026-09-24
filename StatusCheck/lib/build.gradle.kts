@@ -34,7 +34,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("_StatusCheck.ui.Main")
+    mainClass.set("StatusCheck.ui.Main")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
