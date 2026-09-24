@@ -4,9 +4,12 @@ package statusCheck.ui;
 import java.util.concurrent.ConcurrentHashMap;
 
 import statusCheck.domain.RowItem;
+import statusCheck.domain.ScanOutput;
 import statusCheck.domain.ScanRequest;
 import statusCheck.domain.ScanResult;
 import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -14,6 +17,7 @@ public class UILogic {
 
 	public static ObservableList<RowItem> items = FXCollections.observableArrayList();
 	static ConcurrentHashMap<String, Integer> indexById = new ConcurrentHashMap<>();
+	public static ObjectProperty<ScanOutput> lastScan = new SimpleObjectProperty<>();
 
 	public static void addPending(ScanRequest content) {
 	    items.add(new RowItem.Pending(content));
