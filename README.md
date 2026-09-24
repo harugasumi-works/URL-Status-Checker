@@ -29,9 +29,22 @@ The design follows one core principle: **data stays as data**. Domain values (`S
 
 7. **UI responsiveness** — the whole scan runs inside a `javafx.concurrent.Task` on a background thread, so the UI never freezes during network calls; per-row updates from `CustomJoin`'s callback are marshaled back onto the JavaFX Application Thread via `Platform.runLater`.
 
+## Sample export
+
+CSV export (values are illustrative):
+
+```csv
+timeStamp,url,outcome,statusCode,latencyMs,reason
+2026-09-25T09:14:02.118Z,www.google.com,Success,200,143,
+2026-09-25T09:14:02.121Z,www.wikipedia.org,Success,200,187,
+2026-09-25T09:14:02.130Z,www.example.com/missing,Fail,404,0,Client failed to make a request.
+```
+
+Successes are listed first, then failures. The JSON export contains the same results plus a `stats` block with `total`, `successCount` and `failureCount`.
+
 ## Tech
 
-- Java 26 (structured concurrency / `StructuredTaskScope`, virtual threads, sealed interfaces, records, pattern matching), compiled and run with `--enable-preview`
+- Java 26 (structured concurrency / `StructuredTaskScope`, virtual threads, sealed interfaces, records, pattern matching), `--enable-preview` is preconfigured in `build.gradle.kts` for compile, test and run, so no extra flags are needed
 - `LazyConstant` (JEP 526/531, preview) for memoized JSON/CSV export data
 - `java.net.http.HttpClient` for HTTPS requests, with browser-like headers to avoid trivial bot-detection false positives
 - JavaFX 26, with scans run via `javafx.concurrent.Task` to keep the UI responsive during network calls
@@ -50,6 +63,14 @@ Built incrementally, phase by phase:
 - [x] Phase 6 — Input sources: manual entry via UI (bulk/file import intentionally out of scope)
 - [x] Phase 7 — Testing: unit tests for all pure logic + real-network integration tests
 - [x] Phase 8 — Bug fixes & decoupling: `CustomJoin`/`Operator` failure callbacks injected via constructor/parameters (no hardcoded UI dependency), scan moved off the JavaFX Application Thread via `Task`, malformed-URL handling
+
+## Design trade-offs
+
+- **Custom `Joiner` instead of a built-in one.** `CustomJoin` reports each result to the UI as soon as its task finishes and never cancels the other tasks, so one slow or failing URL doesn't stop the rest of the scan.
+- **A crashed task still produces a result.** Each task converts any unexpected `RuntimeException` into a normal `Fail`, so a URL never disappears from the table or the export. `onTaskFailure` remains as a last-resort signal for anything outside that.
+- **`3xx` counts as `Success`.** The check answers "does this URL respond without an error?", and it stops at the first response instead of following redirects. This is fast and simple, but it doesn't verify where a redirect ends up.
+- **Shared state is confined to the UI layer.** `UILogic` holds the table rows, an id-to-row index and the last scan as static fields, which is pragmatic for a single-window JavaFX app. The `domain`, `concurrency` and `io` packages keep no shared mutable state, apart from one shared, thread-safe `HttpClient`.
+- **Lazy export.** JSON and CSV are built with `LazyConstant` the first time they are needed, so repeated **Save** clicks reuse the converted result.
 
 ## Known limitations
 
@@ -76,7 +97,6 @@ cd StatusCheck
 
 ```bash
 cd StatusCheck
-./gradlew test
+./gradlew test             # unit tests only, no network needed
+./gradlew integrationTest  # tests tagged `integration`: real HTTPS requests, needs internet access
 ```
-
-> Integration tests (tagged `integration`) make real HTTPS requests and are slower than the unit suite.
