@@ -68,8 +68,8 @@ public class ButtonFactory {
 				JSON json = UILogic.lastScan.get().json().get();
 				ExportFile.exportJSON(json);
 				PopUp.message("Successfully exported");
-			} catch (Exception _) {
-				PopUp.message("Operation was interrupted");
+			} catch (Exception e) {
+				PopUp.message("Operation was interrupted. Reason: " + e.getMessage());
 			}
 		});
 		return item;
@@ -82,8 +82,8 @@ public class ButtonFactory {
 				CSV csv = UILogic.lastScan.get().csv().get();
 				ExportFile.exportCSV(csv);
 				PopUp.message("Successfully exported");
-			} catch (Exception _) {
-				PopUp.message("Operation was interrupted");
+			} catch (Exception e) {
+				PopUp.message("Operation was interrupted. Reason: " + e.getMessage());
 			}
 		});
 		return item;

@@ -9,7 +9,7 @@ public class ReturnOutput {
 	@SuppressWarnings("preview")
 	public static ScanOutput output(ExecutionResult result) {
 		Report stat = Report.summarize(result);
-		return new ScanOutput(Report.summarize(result), 
+		return new ScanOutput(stat, 
 				LazyConstant.of(() -> {return JsonDto.convert(stat); }),
 				LazyConstant.of(() -> {return CsvDto.convert(result); })
 			);
