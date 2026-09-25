@@ -62,33 +62,33 @@ public class ButtonFactory {
 	}
 
 	public static MenuItem json() {
-		MenuItem item = new MenuItem("Export to JSON");
-		item.setOnAction(_ -> {
-			try {
-				JSON json = UILogic.lastScan.get().json().get();
-				ExportFile.exportJSON(json);
-				PopUp.message("Successfully exported");
-			} catch (Exception e) {
-				PopUp.message("Operation was interrupted. Reason: " + e.getMessage());
-			}
-		});
-		return item;
+	    MenuItem item = new MenuItem("Export to JSON");
+	    item.setOnAction(_ -> {
+	        try {
+	            JSON json = UILogic.lastScan.get().json().get();
+	            boolean saved = ExportFile.exportJSON(json);
+	            PopUp.message(saved ? "Successfully exported" : "Operation canceled");
+	        } catch (Exception e) {
+	            PopUp.message("Operation was interrupted. Reason: " + e.getMessage());
+	        }
+	    });
+	    return item;
 	}
 
 	public static MenuItem csv() {
-		MenuItem item = new MenuItem("Export to CSV");
-		item.setOnAction(_ -> {
-			try {
-				CSV csv = UILogic.lastScan.get().csv().get();
-				ExportFile.exportCSV(csv);
-				PopUp.message("Successfully exported");
-			} catch (Exception e) {
-				PopUp.message("Operation was interrupted. Reason: " + e.getMessage());
-			}
-		});
-		return item;
+	    MenuItem item = new MenuItem("Export to CSV");
+	    item.setOnAction(_ -> {
+	        try {
+	            CSV csv = UILogic.lastScan.get().csv().get();
+	            boolean saved = ExportFile.exportCSV(csv);
+	            PopUp.message(saved ? "Successfully exported" : "Operation canceled");
+	        } catch (Exception e) {
+	            PopUp.message("Operation was interrupted. Reason: " + e.getMessage());
+	        }
+	    });
+	    return item;
 	}
-
+	
 	public static SplitMenuButton saveButton() {
 		SplitMenuButton button = new SplitMenuButton("Save");
 

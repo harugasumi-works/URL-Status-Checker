@@ -16,15 +16,15 @@ import javafx.stage.Stage;
 
 public class ExportFile {
 	
-	public static void exportJSON(JSON body) {
-        export(new ExtensionFilter("JSON Files (*.json)", "*.json"), body::data);
+	public static boolean exportJSON(JSON body) {
+        return export(new ExtensionFilter("JSON Files (*.json)", "*.json"), body::data);
     }
 
-    public static void exportCSV(CSV body) {
-        export(new ExtensionFilter("CSV Files (*.csv)", "*.csv"), body::data);
+    public static boolean exportCSV(CSV body) {
+        return export(new ExtensionFilter("CSV Files (*.csv)", "*.csv"), body::data);
     }
 
-    private static void export(ExtensionFilter filter, Supplier<String> content) {
+    private static boolean export(ExtensionFilter filter, Supplier<String> content) {
     	Stage stage = new Stage();
         FileChooser chooser = new FileChooser();
         chooser.getExtensionFilters().add(filter);
@@ -32,13 +32,17 @@ public class ExportFile {
 
         File targetFile = chooser.showSaveDialog(stage);
 
-        if (targetFile != null) {
-            try {
-                Files.writeString(targetFile.toPath(), content.get());
-            } catch (IOException e) {
-                stage.setScene(new Scene(new Group(new Text(10, 40, e.getMessage()))));
-                stage.show();
-            }
+        if (targetFile == null) {
+            return false;
+        }
+
+        try {
+            Files.writeString(targetFile.toPath(), content.get());
+            return true;
+        } catch (IOException e) {
+            stage.setScene(new Scene(new Group(new Text(10, 40, e.getMessage()))));
+            stage.show();
+            return false;
         }
     }
 }
