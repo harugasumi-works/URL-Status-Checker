@@ -11,9 +11,10 @@ site_name = "Documentation"
 # edit_uri = "edit/main/docs/"
 
 nav = [
+  { "プロジェクト" = "index.md" },
   { "要件定義書" = "要件定義書.md" },
   { "基本設計書" = "基本設計書.md" },
-  { "詳細設計書" = "詳細設計書.md" },
+  { "詳細設計書" = "詳細設計書.md" }
 ]
 
 # extra_css = ["stylesheets/extra.css"]
