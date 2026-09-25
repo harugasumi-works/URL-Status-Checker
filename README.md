@@ -4,10 +4,10 @@ A concurrent URL health-checker built around Data-Oriented Programming (DOP), fu
 
 The design follows one core principle: **data stays as data**. Domain values (`ScanRequest`, `Outcome`, `ScanResult`) are immutable records and sealed types with no behavior attached; all logic lives in small, composable functions that transform one immutable value into the next.
 
-![Main window with scan results](docs/assets/main-window.png)
+![Main window with scan results](.github/assets/main-window.png)
 <!-- TODO: replace with an actual screenshot of the table showing a mix of Success/Fail rows -->
 
-![Save menu with JSON/CSV export options](docs/assets/save-menu.png)
+![Save menu with JSON/CSV export options](.github/assets/save-menu.png)
 <!-- TODO: replace with an actual screenshot of the Save menu open -->
 
 ## How it works
