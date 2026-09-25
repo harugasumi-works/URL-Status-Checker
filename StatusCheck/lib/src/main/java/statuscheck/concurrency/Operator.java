@@ -35,9 +35,9 @@ public class Operator {
 			Instant end = Instant.now();
 			int code = response.statusCode();
 			return switch(code) {
-			case int c when (c < 400) -> new Success(start, code, Duration.between(start, end).toMillis());
-			case int c when (c >= 400 && c < 500) -> new Fail(start, code,"Client failed to make a request.");
-			default -> new Fail(start, code,"Server failed.");
+				case int c when (c < 400) -> new Success(start, code, Duration.between(start, end).toMillis());
+				case int c when (c >= 400 && c < 500) -> new Fail(start, code,"Client failed to make a request.");
+				default -> new Fail(start, code,"Server failed.");
 			};
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
@@ -52,7 +52,7 @@ public class Operator {
 		try {
 			return new ScanResult(req.id(), req, scanOperator(req));
 		} catch (RuntimeException e) {
-			return new ScanResult(req.id(), req, new Fail(Instant.now(), 0, "Unexpected error: " + e));
+			return new ScanResult(req.id(), req, new Fail(Instant.now(), 0, "Unexpected error: " + e.getMessage()));
 		}
 	}
 	
