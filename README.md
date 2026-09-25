@@ -4,6 +4,12 @@ A concurrent URL health-checker built around Data-Oriented Programming (DOP), fu
 
 The design follows one core principle: **data stays as data**. Domain values (`ScanRequest`, `Outcome`, `ScanResult`) are immutable records and sealed types with no behavior attached; all logic lives in small, composable functions that transform one immutable value into the next.
 
+![Main window with scan results](docs/assets/main-window.png)
+<!-- TODO: replace with an actual screenshot of the table showing a mix of Success/Fail rows -->
+
+![Save menu with JSON/CSV export options](docs/assets/save-menu.png)
+<!-- TODO: replace with an actual screenshot of the Save menu open -->
+
 ## How it works
 
 1. **Input** — the user adds URLs through the UI, backed by a sealed `RowItem` (`Pending`/`Scanned`) shown in a single `TableView`, updated in place as results arrive. Enter the host and path *without* a scheme (e.g. `example.com/health`); `https://` is prepended automatically.
@@ -78,6 +84,7 @@ Built incrementally, phase by phase:
 - HTTPS only — the `https://` scheme is always prepended, so plain `http://` URLs can't be checked
 - Redirects are not followed, so a `3xx` response is reported as `Success`
 - Export destination is user-chosen via the OS file picker; no built-in disk-space handling
+- No input validation distinguishes a well-formed but unresolvable domain from a random non-URL string — both are sent as-is and simply come back as `Fail`, so garbage input and a genuinely broken link are indistinguishable in the results
 
 ## Requirements
 
@@ -88,15 +95,30 @@ Built incrementally, phase by phase:
 
 The Gradle project lives in the `StatusCheck/` subdirectory:
 
+**macOS / Linux:**
 ```bash
 cd StatusCheck
 ./gradlew run
 ```
 
+**Windows:**
+```bat
+cd StatusCheck
+gradlew.bat run
+```
+
 ## Testing
 
+**macOS / Linux:**
 ```bash
 cd StatusCheck
 ./gradlew test             # unit tests only, no network needed
 ./gradlew integrationTest  # tests tagged `integration`: real HTTPS requests, needs internet access
+```
+
+**Windows:**
+```bat
+cd StatusCheck
+gradlew.bat test
+gradlew.bat integrationTest
 ```
