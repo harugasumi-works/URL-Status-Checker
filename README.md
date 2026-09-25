@@ -85,6 +85,7 @@ Built incrementally, phase by phase:
 - Redirects are not followed, so a `3xx` response is reported as `Success`
 - Export destination is user-chosen via the OS file picker; no built-in disk-space handling
 - No input validation distinguishes a well-formed but unresolvable domain from a random non-URL string — both are sent as-is and simply come back as `Fail`, so garbage input and a genuinely broken link are indistinguishable in the results
+- Individual rows can't be edited or removed once added — the list only grows, and a wrong entry has to be worked around rather than deleted
 
 ## Requirements
 
