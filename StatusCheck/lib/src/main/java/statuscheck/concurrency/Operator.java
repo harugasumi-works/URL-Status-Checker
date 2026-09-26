@@ -10,7 +10,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.StructuredTaskScope;
 import java.util.function.Consumer;
 
-import statuscheck.domain.ExecutionResult;
 import statuscheck.domain.Fail;
 import statuscheck.domain.Outcome;
 import statuscheck.domain.ScanRequest;
@@ -57,7 +56,7 @@ public class Operator {
 	}
 	
 	@SuppressWarnings("preview")
-	public static ExecutionResult scanAll(List<ScanRequest> requests, Consumer<ScanResult> onResult, Runnable  onTaskFailure) throws InterruptedException {
+	public static void scanAll(List<ScanRequest> requests, Consumer<ScanResult> onResult, Runnable  onTaskFailure) throws InterruptedException {
 		List<Callable<ScanResult>> tasks = requests.stream()
 				.<Callable<ScanResult>>map(req -> () -> scan(req))
 				.toList();
@@ -65,7 +64,7 @@ public class Operator {
 		var joiner = new CustomJoin(onResult, onTaskFailure);
 		try (var scope = StructuredTaskScope.open(joiner)) {		
 			tasks.stream().forEach(scope::fork);
-				return scope.join();
+			scope.join();
 		}
 	}
 	

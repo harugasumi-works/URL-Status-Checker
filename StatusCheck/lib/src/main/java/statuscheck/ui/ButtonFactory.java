@@ -4,14 +4,11 @@ import statuscheck.concurrency.Operator;
 import statuscheck.domain.CSV;
 import statuscheck.domain.JSON;
 import statuscheck.domain.RowItem;
-import statuscheck.domain.ScanOutput;
 import statuscheck.domain.ScanRequest;
 import statuscheck.domain.ScanResult;
 import statuscheck.io.ExportFile;
-import statuscheck.io.ReturnOutput;
 
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import javafx.concurrent.Task;
 import javafx.geometry.Side;
@@ -35,27 +32,22 @@ public class ButtonFactory {
 				return;
 			}
 
-			Task<ScanOutput> task = new Task<ScanOutput>() {
+			Task<Void> task = new Task<Void>() {
 				@Override
-				protected ScanOutput call() throws InterruptedException{
-					return ReturnOutput.output(Operator.scanAll(requests, UILogic::onScanCompleted, () -> PopUp.message("Thread failed")));
+				protected Void call() throws InterruptedException{
+					Operator.scanAll(requests, UILogic::onScanCompleted, () -> PopUp.message("Thread failed"));
+					return null;
 				}
 			};
 
 			task.setOnSucceeded(_ -> {
-				try {
-					UILogic.lastScan.setValue(task.get());
 					PopUp.message("Successfully scanned");
-				} catch (InterruptedException e) {
-					PopUp.message(e.getMessage());
-				} catch (ExecutionException e) {
-					PopUp.message(e.getMessage());
-				}
+
 			});
 			task.setOnFailed(_ -> PopUp.message("Scan failed unexpectedly"));
 
 			new Thread(task).start();
-			button.disableProperty().bind(task.runningProperty());
+			UILogic.isScanning.bind(task.runningProperty());
 		});
 
 		return button;
@@ -64,8 +56,9 @@ public class ButtonFactory {
 	public static MenuItem json() {
 	    MenuItem item = new MenuItem("Export to JSON");
 	    item.setOnAction(_ -> {
+	    	
 	        try {
-	            JSON json = UILogic.lastScan.get().json().get();
+	            JSON json = UILogic.currentOutput().json().get();
 	            boolean saved = ExportFile.exportJSON(json);
 	            PopUp.message(saved ? "Successfully exported" : "Operation canceled");
 	        } catch (Exception e) {
@@ -79,7 +72,7 @@ public class ButtonFactory {
 	    MenuItem item = new MenuItem("Export to CSV");
 	    item.setOnAction(_ -> {
 	        try {
-	            CSV csv = UILogic.lastScan.get().csv().get();
+	            CSV csv = UILogic.currentOutput().csv().get();
 	            boolean saved = ExportFile.exportCSV(csv);
 	            PopUp.message(saved ? "Successfully exported" : "Operation canceled");
 	        } catch (Exception e) {
@@ -103,7 +96,17 @@ public class ButtonFactory {
 			}
 		});
 
-		button.disableProperty().bind(UILogic.lastScan.isNull());
+		button.disableProperty().bind(UILogic.hasData.not());
+		return button;
+	}
+	
+	public static Button deleteAllButton() {
+		Button button = new Button("Clear all");
+		button.setOnAction(_ -> {
+			if (PopUp.confirm("Are you sure you want to clear all items?")) {
+	            UILogic.wipeOut();
+	        }
+		});
 		return button;
 	}
 

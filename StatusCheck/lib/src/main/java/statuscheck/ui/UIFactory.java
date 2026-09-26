@@ -38,12 +38,16 @@ public class UIFactory {
 	}
 	
 	public static ToolBar toolBar() {
-		return new ToolBar(
+		ToolBar toolbar = new ToolBar(
         		ButtonFactory.scanButton(), 
         		ButtonFactory.saveButton(),
         		new Label("Enter Text:"),
         		UIFactory.input(),
-        		new Separator());  
+        		ButtonFactory.deleteAllButton(),
+        		new Separator()); 
+		
+		toolbar.disableProperty().bind(UILogic.isScanning);
+		return toolbar;
 	}
 	
 	
