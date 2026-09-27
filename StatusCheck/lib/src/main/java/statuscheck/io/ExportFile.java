@@ -7,9 +7,7 @@ import java.util.function.Supplier;
 
 import statuscheck.domain.CSV;
 import statuscheck.domain.JSON;
-import javafx.scene.Group;
-import javafx.scene.Scene;
-import javafx.scene.text.Text;
+import statuscheck.ui.PopUp;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
@@ -40,8 +38,7 @@ public class ExportFile {
             Files.writeString(targetFile.toPath(), content.get());
             return true;
         } catch (IOException e) {
-            stage.setScene(new Scene(new Group(new Text(10, 40, e.getMessage()))));
-            stage.show();
+            PopUp.message(e.getMessage());
             return false;
         }
     }

@@ -1,4 +1,4 @@
-package statuscheck.ui;
+package statuscheck.ui.firstlayer;
 
 import javafx.application.Application;
 

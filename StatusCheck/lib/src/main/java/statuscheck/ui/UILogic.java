@@ -1,7 +1,7 @@
 package statuscheck.ui;
 
-
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import statuscheck.domain.RowItem;
@@ -17,68 +17,105 @@ import javafx.collections.ObservableList;
 
 public class UILogic {
 
+	static final Set<String> indexRecord = ConcurrentHashMap.newKeySet();
 	public static ObservableList<RowItem> items = FXCollections.observableArrayList();
-	static ConcurrentHashMap<String, Integer> indexById = new ConcurrentHashMap<>();
+	static ConcurrentHashMap<String, RowItem> itemById = new ConcurrentHashMap<>();
+
 	public static BooleanProperty hasData = new SimpleBooleanProperty(false);
 	public static final BooleanProperty isScanning = new SimpleBooleanProperty(false);
 
 	public static void addPending(ScanRequest content) {
-	    items.add(new RowItem.Pending(content));
-	    indexById.put(content.id(), items.size() - 1);
+		if (!indexRecord.add(content.requestedURL())) {
+			return;
+		}
+		RowItem.Pending pendingItem = new RowItem.Pending(content);
+		itemById.put(content.id(), pendingItem);
+		items.add(pendingItem);
 	}
 
 	public static void onScanCompleted(ScanResult content) {
-	    Integer idx = indexById.get(content.id());
-	    Platform.runLater(() -> {
-	    	if (idx != null) {
-	    		items.set(idx, new RowItem.Scanned(content));
-	    		if (hasData.get() == false)
-	    			hasData.setValue(true);
-	    	} else {
-	    		items.add(new RowItem.Scanned(content));
-	    		indexById.put(content.id(), items.size() - 1);
-	    		if (hasData.get() == false)
-	    			hasData.setValue(true);
-	    	}
-	    });
+		Platform.runLater(() -> {
+			RowItem newItem = new RowItem.Scanned(content);
+			RowItem existingItem = itemById.put(content.id(), newItem);
+
+			if (existingItem != null) {
+				int idx = items.indexOf(existingItem);
+				if (idx != -1) {
+					items.set(idx, newItem);
+				}
+			} else {
+				items.add(newItem);
+			}
+
+			if (!hasData.get()) {
+				hasData.setValue(true);
+			}
+		});
 	}
-	
+
 	public static void wipeOut() {
 		Runnable clear = () -> {
-	        if (!items.isEmpty()) {
-	            indexById.clear();
-	            items.clear();
-	            hasData.setValue(false);
-	        }
-	    };
-	    if (Platform.isFxApplicationThread()) {
-	        clear.run();
-	    } else {
-	        Platform.runLater(clear);
-	    }
+			if (!items.isEmpty()) {
+				itemById.clear();
+				items.clear();
+				indexRecord.clear();
+				hasData.setValue(false);
+			}
+		};
+		if (Platform.isFxApplicationThread()) {
+			clear.run();
+		} else {
+			Platform.runLater(clear);
+		}
 	}
-	
+
+	public static void removeItem(String id) {
+		if (id == null)
+			return;
+
+		Runnable removeAction = () -> {
+			RowItem removedItem = itemById.remove(id);
+			if (removedItem != null) {
+				items.remove(removedItem);
+				indexRecord.remove(getUrlFromItem(removedItem));
+
+				hasData.setValue(items.stream().anyMatch(row -> row instanceof RowItem.Scanned));
+			}
+		};
+
+		if (Platform.isFxApplicationThread()) {
+			removeAction.run();
+		} else {
+			Platform.runLater(removeAction);
+		}
+	}
+
 	public static void removeItem(RowItem item) {
-	    if (item != null) {
-	        String id = switch (item) {
-	            case RowItem.Pending p -> p.request().id();
-	            case RowItem.Scanned s -> s.result().context().id();
-	        };
-	        indexById.remove(id);
-	        items.remove(item);
-	        hasData.setValue(items.stream().anyMatch(row -> row instanceof RowItem.Scanned));
-	    } 
-	    
+		if (item != null) {
+			removeItem(getIdFromItem(item));
+		}
 	}
-	
+
+	private static String getIdFromItem(RowItem item) {
+		return switch (item) {
+		case RowItem.Pending p -> p.request().id();
+		case RowItem.Scanned s -> s.result().context().id();
+		};
+	}
+
+	private static String getUrlFromItem(RowItem item) {
+		return switch (item) {
+		case RowItem.Pending p -> p.request().requestedURL();
+		case RowItem.Scanned s -> s.result().context().requestedURL();
+		};
+	}
+
 	public static ScanOutput currentOutput() {
-	    List<ScanResult> results = items.stream().<ScanResult>mapMulti((item, consumer) -> {
-	        if (item instanceof RowItem.Scanned s) {
-	            consumer.accept(s.result());
-	        }
-	    }).toList();
-	    return ReturnOutput.fromResults(results);
+		List<ScanResult> results = items.stream().<ScanResult>mapMulti((item, consumer) -> {
+			if (item instanceof RowItem.Scanned s) {
+				consumer.accept(s.result());
+			}
+		}).toList();
+		return ReturnOutput.fromResults(results);
 	}
-	
-	
 }

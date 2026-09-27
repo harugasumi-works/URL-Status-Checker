@@ -1,4 +1,4 @@
-package statuscheck.ui;
+package statuscheck.ui.firstlayer;
 
 import java.util.UUID;
 
@@ -6,6 +6,7 @@ import statuscheck.domain.Fail;
 import statuscheck.domain.RowItem;
 import statuscheck.domain.ScanRequest;
 import statuscheck.domain.Success;
+import statuscheck.ui.UILogic;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -14,10 +15,10 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 
-public class UIFactory {
-
+public class MainUI {
 	
 	public static TextField input() {
 		TextField field = new TextField();
@@ -25,10 +26,11 @@ public class UIFactory {
         field.setPrefWidth(250);
         
         Runnable addURL = () -> {
-            String input = field.getText().trim();
+        	String input = field.getText().trim().replaceFirst("(?i)^https://", "");
             if (!input.isEmpty()) {
             	UILogic.addPending(new ScanRequest(UUID.randomUUID().toString(), input));
                 field.clear();
+                UILogic.hasData.setValue(true);
             }
         };
         
@@ -39,11 +41,12 @@ public class UIFactory {
 	
 	public static ToolBar toolBar() {
 		ToolBar toolbar = new ToolBar(
-        		ButtonFactory.scanButton(), 
-        		ButtonFactory.saveButton(),
+				MainButtons.scanButton(), 
+				MainButtons.saveButton(),
         		new Label("Enter Text:"),
-        		UIFactory.input(),
-        		ButtonFactory.deleteAllButton(),
+        		MainUI.input(),
+        		MainButtons.deleteAllButton(),
+        		MainButtons.bulkImportButton(),
         		new Separator()); 
 		
 		toolbar.disableProperty().bind(UILogic.isScanning);
@@ -66,6 +69,16 @@ public class UIFactory {
         table.setEditable(false);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
         table.getColumns().addAll(urlColumn(), statusColumn(), codeColumn(), detailColumn());
+        table.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.DELETE) {
+                RowItem selectedItem = table.getSelectionModel().getSelectedItem();
+                
+                if (selectedItem != null) {
+                    UILogic.removeItem(selectedItem); 
+                    event.consume(); 
+                }
+            }
+        });
         return table;
 		
 	}
@@ -120,8 +133,9 @@ public class UIFactory {
 	
 	
 	
-	public static Scene createScene() {
-		return new Scene(pane(toolBar(), requestTable()), 800, 600);
+	public static Scene createMainScene() {
+		Scene scene = new Scene(pane(toolBar(), requestTable()), 800, 600);
+		return scene;
 	}
 
 }

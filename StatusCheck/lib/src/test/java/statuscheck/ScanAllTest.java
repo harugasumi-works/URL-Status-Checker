@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
@@ -15,9 +17,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 import statuscheck.concurrency.Operator;
-import statuscheck.domain.ExecutionResult;
 import statuscheck.domain.Fail;
 import statuscheck.domain.ScanRequest;
+import statuscheck.domain.ScanResult;
 
 
 public class ScanAllTest {
@@ -26,83 +28,139 @@ public class ScanAllTest {
 	}
 	
 	@Test
-	public void malformedURLTurnsIntoAFail() throws InterruptedException {	
-		var requests = List.of(req("asd asd asd"), req("ありがとう"));
-		var result = Operator.scanAll(requests, _ -> {}, () -> {});
+	public void malformedURLTurnsIntoAFail() throws InterruptedException {
+		var requests = List.of(
+				req("asd asd asd"),
+				req("ありがとう")
+		);
+
+		List<ScanResult> results =
+				Collections.synchronizedList(new ArrayList<>());
 		
-		assertEquals(0, result.successes().size());
-		assertEquals(2, result.failures().size());
+		Operator.scanAll(requests, results::add, () -> {});
+		
+		assertEquals(2, results.size());
+		assertEquals(
+				2,
+				results.stream()
+						.filter(result -> result.outcome() instanceof Fail)
+						.count()
+		);
 	}
 	
 	@Test
-	public void callbackCallsOncePerRequest() throws InterruptedException {	
+	public void callbackCallsOncePerRequest() throws InterruptedException {
 		AtomicInteger counter = new AtomicInteger();
-		var requests = List.of(req("asd asd asd"), req("ありがとう"));
-		Operator.scanAll(requests, _ -> counter.incrementAndGet(), () -> {});
+		var requests = List.of(
+				req("asd asd asd"),
+				req("ありがとう")
+		);
+		
+		Operator.scanAll(
+				requests,
+				_ -> counter.incrementAndGet(),
+				() -> {}
+		);
 		
 		assertEquals(2, counter.get());
 	}
 	
 	@Test
-	public void emptyListReturnsEmptyResult() throws InterruptedException {
+	public void emptyListReturnsEmptyResult() {
 		List<ScanRequest> requests = List.of();
-		ExecutionResult result = assertTimeoutPreemptively(Duration.ofSeconds(2), 
+		
+		assertTimeoutPreemptively(
+				Duration.ofSeconds(2),
 				() -> {
-					return Operator.scanAll(requests, _ -> {}, () -> {});
+					List<ScanResult> results = new ArrayList<>();
+					
+					Operator.scanAll(
+							requests,
+							results::add,
+							() -> {}
+					);
+					
+					assertEquals(0, results.size());
 				},
 				"Thread timeout"
-				);
-		
-		assertEquals(0, result.successes().size());
-		assertEquals(0, result.failures().size());
+		);
 	}
 	
 	@Test
 	public void allFailuresAreCollected() throws InterruptedException {
-		var requests = List.of(req("asd asd asd"), req("ありがとう"));
-		var result = Operator.scanAll(requests, _ -> {}, () -> {});
+		var requests = List.of(
+				req("asd asd asd"),
+				req("ありがとう")
+		);
+
+		List<ScanResult> results =
+				Collections.synchronizedList(new ArrayList<>());
 		
-		assertEquals(2, result.failures().size());
+		Operator.scanAll(requests, results::add, () -> {});
 		
-		List<Fail> failList = List.of(assertInstanceOf(Fail.class, result.failures().get(0).outcome()),
-				                      assertInstanceOf(Fail.class, result.failures().get(1).outcome()));
-		failList.forEach(fail -> assertEquals(0, fail.statusCode()));
+		assertEquals(2, results.size());
+		
+		results.forEach(result -> {
+			Fail fail = assertInstanceOf(
+					Fail.class,
+					result.outcome()
+			);
+			assertEquals(0, fail.statusCode());
+		});
 	}
 	
 	@Test
-	public void consistentID() throws InterruptedException {	
-		var requests = List.of(req("asd asd asd"), req("ありがとう"));
+	public void consistentID() throws InterruptedException {
+		var requests = List.of(
+				req("asd asd asd"),
+				req("ありがとう")
+		);
+
 		var originIDSet = new HashSet<>(
 				requests.stream()
-					.map(req -> req.id())
-					.toList()
-				);
-									
-		var result = Operator.scanAll(requests, _ -> {}, () -> {});
+						.map(ScanRequest::id)
+						.toList()
+		);
+		
+		List<ScanResult> results =
+				Collections.synchronizedList(new ArrayList<>());
+
+		Operator.scanAll(requests, results::add, () -> {});
+		
 		var executedIDSet = new HashSet<>(
-				result.failures().stream()
-					.map(item -> item.id())
-					.toList()
-				);
+				results.stream()
+						.map(ScanResult::id)
+						.toList()
+		);
 		
-		
-		assertEquals(2, result.failures().size());
+		assertEquals(2, results.size());
 		assertEquals(originIDSet, executedIDSet);
 	}
 	
 	@Test
-	public void secondScanDoesNotContainFirstScanResults() throws InterruptedException {
-		var requests_1 = List.of(req("asd asd asd"));
-		var requests_2 = List.of(req("ありがとう"));
+	public void secondScanDoesNotContainFirstScanResults()
+			throws InterruptedException {
+
+		var requests1 = List.of(req("asd asd asd"));
+		var requests2 = List.of(req("ありがとう"));
 		
-		Operator.scanAll(requests_1, _ -> {}, () -> {});
-		var result = Operator.scanAll(requests_2, _ -> {}, () -> {});
+		List<ScanResult> results1 =
+				Collections.synchronizedList(new ArrayList<>());
+		List<ScanResult> results2 =
+				Collections.synchronizedList(new ArrayList<>());
 		
-		assertEquals(1, result.failures().size());
-		assertEquals(0, result.successes().size());
+		Operator.scanAll(requests1, results1::add, () -> {});
+		Operator.scanAll(requests2, results2::add, () -> {});
 		
-		assertNotEquals(requests_1.get(0).id(), result.failures().get(0).id());
-		assertEquals(requests_2.get(0).id(), result.failures().get(0).id());
+		assertEquals(1, results2.size());
+		assertEquals(
+				requests2.get(0).id(),
+				results2.get(0).id()
+		);
+		assertNotEquals(
+				requests1.get(0).id(),
+				results2.get(0).id()
+		);
 	}
 	
 }
