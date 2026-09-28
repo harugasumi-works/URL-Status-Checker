@@ -208,7 +208,7 @@ public class MainButtons {
 				UILogic.wipeOut();
 			}
 		});
-		button.disableProperty().bind(UILogic.hasData.not());
+		button.disableProperty().bind(Bindings.isEmpty(UILogic.items));
 		return button;
 	}
 

@@ -29,7 +29,7 @@ public class MainUI {
         field.setPrefWidth(250);
         
         Runnable addURL = () -> {
-        	String input = field.getText().trim().replaceFirst("(?i)^https://", "");
+        	String input = MainButtons.normalize(field.getText());
             if (!input.isEmpty()) {
             	UILogic.addPending(new ScanRequest(UUID.randomUUID().toString(), input));
                 field.clear();
