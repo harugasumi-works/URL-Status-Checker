@@ -20,11 +20,11 @@ public class WindowInit {
 		stage.setScene(MainUI.createMainScene());
 		stage.setOnCloseRequest(event -> {
 			if (UILogic.items.isEmpty()) {
-				UILogic.saveIfDirty();
+				UILogic.saveNow();
 				return;
 			}
 			CloseChoice choice = PopUp.onClose("Save this session before closing?");
-			if (choice == CloseChoice.SAVE) UILogic.saveIfDirty();
+			if (choice == CloseChoice.SAVE) UILogic.saveNow();
 			if (choice == CloseChoice.DISCARD) {
 				UILogic.preventAutoSave();
 				AutoSave.noSave();

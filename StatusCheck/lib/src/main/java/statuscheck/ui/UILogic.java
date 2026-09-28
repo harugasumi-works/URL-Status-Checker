@@ -5,6 +5,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import statuscheck.domain.RowItem;
 import statuscheck.domain.ScanOutput;
@@ -31,6 +34,13 @@ public class UILogic {
 	public static final BooleanProperty isScanning = new SimpleBooleanProperty(false);
 	public static final StringProperty saveStatus = new SimpleStringProperty("Autosave on");
 	static volatile boolean dirty = false;
+	private static long changeVersion = 0;
+	private static boolean saveInProgress = false;
+	private static final ExecutorService SAVE_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+		Thread thread = new Thread(r, "session-autosave");
+		thread.setDaemon(true);
+		return thread;
+	});
 	
 	private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
@@ -42,7 +52,7 @@ public class UILogic {
 		RowItem.Pending pendingItem = new RowItem.Pending(content);
 		itemById.put(content.id(), pendingItem);
 		items.add(pendingItem);
-		dirty = true;
+		markDirty();
 	}
 
 	public static void onScanCompleted(ScanResult content) {
@@ -57,11 +67,11 @@ public class UILogic {
 				int idx = items.indexOf(existingItem);
 				if (idx != -1) {
 					items.set(idx, newItem);
-					dirty = true;
+					markDirty();
 				}
 			} else {
 				items.add(newItem);
-				dirty = true;
+				markDirty();
 			}
 
 			if (!hasData.get()) {
@@ -80,7 +90,7 @@ public class UILogic {
 				items.clear();
 				indexRecord.clear();
 				hasData.setValue(false);
-				dirty = true;
+				markDirty();
 			}
 		};
 		if (Platform.isFxApplicationThread()) {
@@ -102,7 +112,7 @@ public class UILogic {
 				indexRecord.remove(getUrlFromItem(removedItem));
 
 				hasData.setValue(items.stream().anyMatch(row -> row instanceof RowItem.Scanned));
-				dirty = true;
+				markDirty();
 			}
 		};
 
@@ -120,12 +130,57 @@ public class UILogic {
 	}
 
 	public static void saveIfDirty() {
-		if (dirty) {
-			if (AutoSave.save(items)) {
-				dirty = false;
-				saveStatus.set("Last saved: " + LocalTime.now().format(TIME_FORMAT));
-			} else saveStatus.set("Autosave failed");
+		if (!Platform.isFxApplicationThread()) {
+			Platform.runLater(UILogic::saveIfDirty);
+			return;
 		}
+		if (!dirty || saveInProgress) return;
+		List<RowItem> snapshot = List.copyOf(items);
+		long snapshotVersion = changeVersion;
+		saveInProgress = true;
+		SAVE_EXECUTOR.execute(() -> {
+			boolean saved = AutoSave.save(snapshot);
+			Platform.runLater(() -> {
+				saveInProgress = false;
+				if (saved) {
+					if (changeVersion == snapshotVersion) dirty = false;
+					saveStatus.set("Last saved: " + LocalTime.now().format(TIME_FORMAT));
+				} else {
+					saveStatus.set("Autosave failed");
+				}
+				if (dirty) saveIfDirty();
+			});
+		});
+	}
+
+	public static void saveNow() {
+		if (!Platform.isFxApplicationThread()) {
+			throw new IllegalStateException("saveNow must run on the JavaFX application thread");
+		}
+		if (!dirty) return;
+		try {
+			SAVE_EXECUTOR.submit(() -> {}).get();
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			saveStatus.set("Autosave interrupted");
+			return;
+		} catch (ExecutionException e) {
+			saveStatus.set("Autosave failed");
+			return;
+		}
+		List<RowItem> snapshot = List.copyOf(items);
+		long snapshotVersion = changeVersion;
+		if (AutoSave.save(snapshot)) {
+			if (changeVersion == snapshotVersion) dirty = false;
+			saveStatus.set("Last saved: " + LocalTime.now().format(TIME_FORMAT));
+		} else {
+			saveStatus.set("Autosave failed");
+		}
+	}
+
+	private static void markDirty() {
+		changeVersion++;
+		dirty = true;
 	}
 
 	private static String getIdFromItem(RowItem item) {
