@@ -5,6 +5,7 @@ import java.util.Optional;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 
 public class PopUp {
@@ -19,7 +20,6 @@ public class PopUp {
             alert.showAndWait();
         };
 
-        // Ensure the Alert is always created on the JavaFX Application Thread
         if (Platform.isFxApplicationThread()) {
             show.run();
         } else {
@@ -32,13 +32,30 @@ public class PopUp {
         alert.setTitle("Confirmation");
         alert.setHeaderText(null);
         alert.setContentText(message);
-
-        // Replace default OK/Cancel buttons with Yes and No
         alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
 
-        // Blocks until the user clicks a button
         Optional<ButtonType> result = alert.showAndWait();
 
         return result.isPresent() && result.get() == ButtonType.YES;
+    }
+    
+    public enum CloseChoice { SAVE, DISCARD, CANCEL }
+    
+    public static CloseChoice onClose(String message) {
+    	Alert alert = new Alert(AlertType.CONFIRMATION);
+    	ButtonType save = new ButtonType("Save", ButtonData.YES);
+    	ButtonType dontSave = new ButtonType("Don't Save", ButtonData.NO);
+    	ButtonType cancel = new ButtonType("Cancel", ButtonData.CANCEL_CLOSE);
+        alert.setTitle("Confirmation");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.getButtonTypes().setAll(save, dontSave, cancel);
+
+        Optional<ButtonType> result = alert.showAndWait();
+        
+        if (result.isEmpty()) return CloseChoice.CANCEL;
+        if (result.get() == save) return CloseChoice.SAVE;
+        if (result.get() == dontSave) return CloseChoice.DISCARD;
+        return CloseChoice.CANCEL;
     }
 }

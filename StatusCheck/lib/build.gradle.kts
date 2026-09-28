@@ -11,8 +11,10 @@ repositories {
 dependencies {
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    implementation("tools.jackson.core:jackson-databind:3.2.2")
-    implementation("tools.jackson.dataformat:jackson-dataformat-csv:3.2.2")
+    implementation(platform("tools.jackson:jackson-bom:3.2.2"))
+ 	implementation("tools.jackson.core:jackson-databind")
+    implementation("tools.jackson.dataformat:jackson-dataformat-csv")
+    
 }
 
 application {

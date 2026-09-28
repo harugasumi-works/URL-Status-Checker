@@ -8,6 +8,8 @@ import statuscheck.domain.ScanRequest;
 import statuscheck.domain.Success;
 import statuscheck.ui.UILogic;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
@@ -17,6 +19,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 
 public class MainUI {
 	
@@ -55,10 +58,11 @@ public class MainUI {
 	
 	
 	
-	public static <T> BorderPane pane(ToolBar bar, TableView<T> table) {
+	public static <T> BorderPane pane(ToolBar toolBar, TableView<T> table, HBox bar) {
 		BorderPane root = new BorderPane();
-        root.setTop(bar);
+        root.setTop(toolBar);
         root.setCenter(table);
+        root.setBottom(bar);
         return root;
 	}
 	
@@ -131,10 +135,22 @@ public class MainUI {
 	    return col;
 	}
 	
+	public static Label updateInfo() {
+		Label label = new Label();
+		label.textProperty().bind(UILogic.saveStatus);
+		return label;
+	}
 	
+	public static HBox bottomBar() {
+		HBox box = new HBox(updateInfo());
+		box.setAlignment(Pos.CENTER_RIGHT);
+		box.setPadding(new Insets(4, 10, 4, 10));
+		return box;
+	}
 	
 	public static Scene createMainScene() {
-		Scene scene = new Scene(pane(toolBar(), requestTable()), 800, 600);
+		Scene scene = new Scene(pane(toolBar(), requestTable(), bottomBar()), 800, 600);
+		
 		return scene;
 	}
 
