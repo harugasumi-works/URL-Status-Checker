@@ -23,6 +23,7 @@ import javafx.collections.ObservableList;
 public class UILogic {
 
 	static final Set<String> indexRecord = ConcurrentHashMap.newKeySet();
+	private static final Set<String> removedIds = ConcurrentHashMap.newKeySet();
 	public static ObservableList<RowItem> items = FXCollections.observableArrayList();
 	static ConcurrentHashMap<String, RowItem> itemById = new ConcurrentHashMap<>();
 
@@ -37,6 +38,7 @@ public class UILogic {
 		if (!indexRecord.add(content.requestedURL())) {
 			return;
 		}
+		removedIds.remove(content.id());
 		RowItem.Pending pendingItem = new RowItem.Pending(content);
 		itemById.put(content.id(), pendingItem);
 		items.add(pendingItem);
@@ -45,6 +47,9 @@ public class UILogic {
 
 	public static void onScanCompleted(ScanResult content) {
 		Platform.runLater(() -> {
+			if (removedIds.contains(content.id())) {
+				return;
+			}
 			RowItem newItem = new RowItem.Scanned(content);
 			RowItem existingItem = itemById.put(content.id(), newItem);
 
@@ -68,6 +73,9 @@ public class UILogic {
 	public static void wipeOut() {
 		Runnable clear = () -> {
 			if (!items.isEmpty()) {
+				for (RowItem item : items) {
+					removedIds.add(getIdFromItem(item));
+				}
 				itemById.clear();
 				items.clear();
 				indexRecord.clear();
@@ -87,6 +95,7 @@ public class UILogic {
 			return;
 
 		Runnable removeAction = () -> {
+			removedIds.add(id);
 			RowItem removedItem = itemById.remove(id);
 			if (removedItem != null) {
 				items.remove(removedItem);

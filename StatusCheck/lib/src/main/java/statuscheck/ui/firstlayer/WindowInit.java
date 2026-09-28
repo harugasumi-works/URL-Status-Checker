@@ -33,8 +33,13 @@ public class WindowInit {
 		});
 
 		List<RowItem> saved = AutoSave.load();
-		if (!saved.isEmpty() && PopUp.confirm("Restore previous session?"))
-			UILogic.restoreSession(saved);
+		if (!saved.isEmpty()) {
+			if (PopUp.confirm("Restore previous session?")) {
+				UILogic.restoreSession(saved);
+			} else {
+				AutoSave.discardStoredSession();
+			}
+		}
 		stage.show();
 
 		Timeline autosaveTimer = new Timeline(new KeyFrame(Duration.seconds(20), _ -> UILogic.saveIfDirty()));
