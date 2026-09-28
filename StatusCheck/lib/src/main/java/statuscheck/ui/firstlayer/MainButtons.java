@@ -147,6 +147,7 @@ public class MainButtons {
 			});
 
 			currentScan = task;
+			UILogic.isScanning.unbind();
 			UILogic.isScanning.bind(task.runningProperty());
 
 			Thread thread = new Thread(task, "url-scan");
