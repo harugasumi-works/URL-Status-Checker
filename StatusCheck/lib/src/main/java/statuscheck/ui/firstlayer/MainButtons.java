@@ -213,39 +213,54 @@ public class MainButtons {
 		return button;
 	}
 
+	private static List<String> normalizedImportURLs(String text) {
+	    return text.lines()
+	            .map(MainButtons::normalize)
+	            .filter(s -> !s.isEmpty())
+	            .toList();
+	}
+
 	public static Button bulkImportButton() {
-		Button button = new Button("Bulk Import");
+	    Button button = new Button("Bulk Import");
 
-		button.setOnAction(_ -> {
-			Stage stage = new Stage();
-			stage.initOwner(button.getScene().getWindow());
-			stage.initModality(Modality.WINDOW_MODAL);
+	    button.setOnAction(_ -> {
+	        Stage stage = new Stage();
+	        stage.initOwner(button.getScene().getWindow());
+	        stage.initModality(Modality.WINDOW_MODAL);
 
-			TextArea area = ImportUI.inputArea();
+	        TextArea area = ImportUI.inputArea();
 
-			Button add = ImportButtons.addButton();
-			add.setOnAction(_ -> {
-				area.getText().lines().map(MainButtons::normalize).filter(s -> !s.isEmpty())
-						.forEach(link -> UILogic.addPending(new ScanRequest(UUID.randomUUID().toString(), link)));
-				area.clear();
-			});
-			add.disableProperty()
-					.bind(Bindings.createBooleanBinding(() -> area.getText().trim().isEmpty(), area.textProperty()));
+	        Button add = ImportButtons.addButton();
+	        add.setOnAction(_ -> {
+	            List<String> links = normalizedImportURLs(area.getText());
 
-			Button cancel = ImportButtons.cancelButton();
-			cancel.setOnAction(_ -> stage.close());
+	            if (links.isEmpty()) {
+	                notifyLater("Enter at least one URL before adding.");
+	                return;
+	            }
 
-			Button importButton = ImportButtons.importFromFilesButton();
-			importButton.setOnAction(_ -> {
-				ImportURLs.urlImport(stage, area);
-			});
+	            links.forEach(link ->
+	                    UILogic.addPending(new ScanRequest(UUID.randomUUID().toString(), link)));
+	            area.clear();
+	        });
 
-			HBox box = ImportUI.buttons(add, cancel, importButton);
+	        add.disableProperty().bind(Bindings.createBooleanBinding(
+	                () -> normalizedImportURLs(area.getText()).isEmpty(),
+	                area.textProperty()));
 
-			stage.setScene(ImportUI.createScene(area, box));
-			stage.showAndWait();
-		});
-		return button;
+	        Button cancel = ImportButtons.cancelButton();
+	        cancel.setOnAction(_ -> stage.close());
+
+	        Button importButton = ImportButtons.importFromFilesButton();
+	        importButton.setOnAction(_ -> ImportURLs.urlImport(stage, area));
+
+	        HBox box = ImportUI.buttons(add, cancel, importButton);
+
+	        stage.setScene(ImportUI.createScene(area, box));
+	        stage.showAndWait();
+	    });
+
+	    return button;
 	}
 
 }
