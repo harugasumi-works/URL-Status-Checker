@@ -33,7 +33,6 @@ public class MainUI {
             if (!input.isEmpty()) {
             	UILogic.addPending(new ScanRequest(UUID.randomUUID().toString(), input));
                 field.clear();
-                UILogic.hasData.setValue(true);
             }
         };
         
