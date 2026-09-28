@@ -7,6 +7,7 @@ import statuscheck.domain.RowItem;
 import statuscheck.domain.ScanRequest;
 import statuscheck.domain.Success;
 import statuscheck.ui.UILogic;
+import statuscheck.util.ContentParser;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -29,8 +30,8 @@ public class MainUI {
         field.setPrefWidth(250);
         
         Runnable addURL = () -> {
-        	String input = MainButtons.normalize(field.getText());
-            if (!input.isEmpty()) {
+        	String input = ContentParser.normalize(field.getText());
+        	if (ContentParser.isValidURL(input)) {
             	UILogic.addPending(new ScanRequest(UUID.randomUUID().toString(), input));
                 field.clear();
             }

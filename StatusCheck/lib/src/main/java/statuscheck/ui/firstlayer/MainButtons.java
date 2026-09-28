@@ -12,9 +12,9 @@ import statuscheck.ui.PopUp;
 import statuscheck.ui.UILogic;
 import statuscheck.ui.secondlayer.ImportButtons;
 import statuscheck.ui.secondlayer.ImportUI;
+import statuscheck.util.ContentParser;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,26 +44,7 @@ public class MainButtons {
 		return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
 	}
 
-	public static String normalize(String raw) {
-		if (raw == null)
-			return "";
-		String s = raw.trim().replaceFirst("(?i)^https?://", "");
-		int end = s.length();
-		for (int i = 0; i < s.length(); i++) {
-			char c = s.charAt(i);
-			if (c == '/' || c == '?' || c == '#') {
-				end = i;
-				break;
-			}
-		}
-		String authority = s.substring(0, end);
-		String rest = s.substring(end);
-		int at = authority.lastIndexOf('@');
-		authority = authority.substring(0, at + 1) + authority.substring(at + 1).toLowerCase(Locale.ROOT);
-		if (rest.equals("/"))
-			rest = "";
-		return authority + rest;
-	}
+	
 
 	public static void cancelScan() {
 		Task<Void> task = currentScan;
@@ -215,8 +196,8 @@ public class MainButtons {
 
 	private static List<String> normalizedImportURLs(String text) {
 	    return text.lines()
-	            .map(MainButtons::normalize)
-	            .filter(s -> !s.isEmpty())
+	            .map(ContentParser::normalize)
+	            .filter(ContentParser::isValidURL)
 	            .toList();
 	}
 
