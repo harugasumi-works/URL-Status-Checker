@@ -18,14 +18,31 @@ public class CsvDto {
 		
 		@SuppressWarnings("preview")
 		public static CsvRow row(ScanResult result) {
-			String url = result.context().requestedURL();
+			String url = safeSpreadsheetCell(result.context().requestedURL());
 			return switch (result.outcome()) {
 				case Success(var ts, var code, var latency) -> new CsvRow(ts, url, "Success", code, latency, "");
-				case Fail(var ts, var code, var reason) -> new CsvRow(ts, url, "Fail", code, 0, reason);
+				case Fail(var ts, var code, var reason) -> new CsvRow(ts, url, "Fail", code, 0, safeSpreadsheetCell(reason));
 			};
 		}
 	}
 	
+	private static String safeSpreadsheetCell(String value) {
+		if (value == null || value.isEmpty()) {
+			return value;
+		}
+		int first = 0;
+		while (first < value.length() && Character.isWhitespace(value.charAt(first))) {
+			first++;
+		}
+		if (first < value.length() && "=+-@".indexOf(value.charAt(first)) >= 0) {
+			return "'" + value;
+		}
+		if (first < value.length() && (value.charAt(first) == '\t' || value.charAt(first) == '\r')) {
+			return "'" + value;
+		}
+		return value;
+	}
+
 	public static CSV convert(ExecutionResult report) {
 		CsvSchema schema = CsvSchema.builder()
 				.addColumn("timeStamp")
