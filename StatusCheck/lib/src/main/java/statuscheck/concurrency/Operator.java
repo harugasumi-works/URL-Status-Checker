@@ -1,12 +1,14 @@
 package statuscheck.concurrency;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.StructuredTaskScope;
 import java.util.function.Consumer;
 
@@ -17,56 +19,101 @@ import statuscheck.domain.ScanResult;
 import statuscheck.domain.Success;
 import statuscheck.net.LinkBuilder;
 
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+
 public class Operator {
+
+	static final int MAX_CONCURRENT_REQUESTS = 50;
+	private static final Semaphore permits = new Semaphore(MAX_CONCURRENT_REQUESTS);
+
+	private static String describe(Throwable t) {
+		String message = t.getMessage();
+		return (message == null || message.isBlank()) ? t.getClass().getSimpleName() : message;
+	}
+
+	private static void closeQuietly(InputStream body) {
+		try {
+			body.close();
+		} catch (IOException ignored) {
+		}
+	}
+
+	private static String reasonFor(int code) {
+		return switch (code) {
+			case 400 -> "Bad request";
+			case 401 -> "Unauthorized";
+			case 403 -> "Forbidden";
+			case 404 -> "Not found";
+			case 405 -> "Method not allowed";
+			case 408 -> "Request timeout";
+			case 410 -> "Gone";
+			case 429 -> "Too many requests";
+			case 500 -> "Internal server error";
+			case 502 -> "Bad gateway";
+			case 503 -> "Service unavailable";
+			case 504 -> "Gateway timeout";
+			default -> code < 500 ? "Client error" : "Server error";
+		};
+	}
 
 	private static Outcome scanOperator(ScanRequest req) {
 		HttpRequest request;
 		try {
 			request = LinkBuilder.requestFactory(req.requestedURL()).build();
-        
+
 		} catch (Exception e) {
-			return new Fail(Instant.now(), 0, e.getMessage());
+			return new Fail(Instant.now(), 0, describe(e));
 		}
 
 		try {
-			Instant start = Instant.now();
-			HttpResponse<String> response = LinkBuilder.clientGet().send(request, HttpResponse.BodyHandlers.ofString());
-			Instant end = Instant.now();
-			int code = response.statusCode();
-			return switch(code) {
-				case int c when (c < 400) -> new Success(start, code, Duration.between(start, end).toMillis());
-				case int c when (c >= 400 && c < 500) -> new Fail(start, code,"Client failed to make a request.");
-				default -> new Fail(start, code,"Server failed.");
-			};
+			permits.acquire();
+			try {
+				Instant start = Instant.now();
+				long begin = System.nanoTime();
+				HttpResponse<InputStream> response = LinkBuilder.clientGet().send(request, BodyHandlers.ofInputStream());
+				long latency = NANOSECONDS.toMillis(System.nanoTime() - begin);
+				closeQuietly(response.body());
+				int code = response.statusCode();
+				if (code < 300) {
+					return new Success(start, code, latency);
+				}
+				if (code < 400) {
+					String location = response.headers().firstValue("Location").map(l -> " (Location: " + l + ")").orElse("");
+					return new Fail(start, code, "Redirect not followed" + location);
+				}
+				return new Fail(start, code, reasonFor(code));
+			} finally {
+				permits.release();
+			}
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			return new Fail(Instant.now(), 0, "The scan was interrupted.");
 		} catch (IOException e) {
-			return new Fail(Instant.now(), 0,"The connection was disrupted: " + e.getMessage());
+			return new Fail(Instant.now(), 0, "The connection was disrupted: " + describe(e));
 		}
-        
+
 	}
-	
+
 	private static ScanResult scan(ScanRequest req) {
 		try {
 			return new ScanResult(req.id(), req, scanOperator(req));
 		} catch (RuntimeException e) {
-			return new ScanResult(req.id(), req, new Fail(Instant.now(), 0, "Unexpected error: " + e.getMessage()));
+			return new ScanResult(req.id(), req, new Fail(Instant.now(), 0, "Unexpected error: " + describe(e)));
 		}
 	}
-	
+
 	@SuppressWarnings("preview")
 	public static void scanAll(List<ScanRequest> requests, Consumer<ScanResult> onResult, Runnable  onTaskFailure) throws InterruptedException {
 		List<Callable<ScanResult>> tasks = requests.stream()
 				.<Callable<ScanResult>>map(req -> () -> scan(req))
 				.toList();
-		
+
 		var joiner = new CustomJoin(onResult, onTaskFailure);
-		try (var scope = StructuredTaskScope.open(joiner)) {		
+		try (var scope = StructuredTaskScope.open(joiner)) {
 			tasks.stream().forEach(scope::fork);
 			scope.join();
 		}
 	}
-	
-	
+
+
 }
