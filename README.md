@@ -1,3 +1,5 @@
+![CI](https://github.com/harugasumi-works/URL-Status-Checker/actions/workflows/gradle.yml/badge.svg)
+
 # URL Status Checker
 
 A concurrent URL status checker built with modern Java, JavaFX, structured concurrency, and a **DOP + OOP** architecture.
