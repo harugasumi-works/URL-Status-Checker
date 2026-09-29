@@ -158,7 +158,6 @@ public class AutoSave {
 	}
 
 	private static void reportSaveFailure(Exception e) {
-		e.printStackTrace();
 		if (saveFailureReported)
 			return;
 		saveFailureReported = true;
