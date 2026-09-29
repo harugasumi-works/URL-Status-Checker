@@ -48,26 +48,27 @@ public class MainUI {
 
 		Runnable addURL = () -> {
 			String raw = field.getText();
+
 			if (raw == null || raw.isBlank()) {
 				return;
 			}
-			if (ContentParser.isPlainHttp(raw)) {
-				appState.setNotice("Only HTTPS is checked. Remove \"http://\" or use https://.");
-				return;
-			}
+
 			String input = ContentParser.normalize(raw);
+
 			if (!ContentParser.isValidURL(input)) {
 				appState.setNotice("Not a valid URL: " + raw.strip());
 				return;
 			}
-			if (store.addPending(new ScanRequest(UUID.randomUUID().toString(), input))) {
+
+			if (store.addPending(
+					new ScanRequest(UUID.randomUUID().toString(), input))) {
 				field.clear();
 				appState.setNotice("");
 			} else {
 				appState.setNotice("Already in the list: " + input);
 			}
 		};
-
+		
 		field.setOnAction(_ -> addURL.run());
 		field.textProperty().addListener((_, _, _) -> appState.setNotice(""));
 

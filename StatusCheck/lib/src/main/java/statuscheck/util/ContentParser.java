@@ -13,7 +13,18 @@ public class ContentParser {
 	public static String normalize(String raw) {
 		if (raw == null)
 			return "";
-		String s = raw.replace("\uFEFF", "").trim().replaceFirst("(?i)^https?://", "");
+
+		String s = raw.replace("\uFEFF", "").trim();
+
+		String scheme = "";
+		if (s.regionMatches(true, 0, "http://", 0, 7)) {
+			scheme = s.substring(0, 7);
+			s = s.substring(7);
+		} else if (s.regionMatches(true, 0, "https://", 0, 8)) {
+			scheme = s.substring(0, 8);
+			s = s.substring(8);
+		}
+
 		int end = s.length();
 		for (int i = 0; i < s.length(); i++) {
 			char c = s.charAt(i);
@@ -22,25 +33,47 @@ public class ContentParser {
 				break;
 			}
 		}
+
 		String authority = s.substring(0, end);
 		String rest = s.substring(end);
+
 		int at = authority.lastIndexOf('@');
-		authority = authority.substring(0, at + 1) + authority.substring(at + 1).toLowerCase(Locale.ROOT);
+		if (at >= 0) {
+			String userInfo = authority.substring(0, at + 1);
+			String hostPort = authority.substring(at + 1);
+			authority = userInfo + hostPort.toLowerCase(Locale.ROOT);
+		} else {
+			authority = authority.toLowerCase(Locale.ROOT);
+		}
+
 		if (rest.equals("/"))
 			rest = "";
-		return authority + rest;
+
+		if (scheme.isEmpty())
+			scheme = "https://";
+
+		return scheme + authority + rest;
 	}
 
 	public static boolean isValidURL(String normalized) {
-		if (normalized == null || normalized.isBlank() || normalized.chars().anyMatch(Character::isWhitespace)) {
+		if (normalized == null || normalized.isBlank()
+				|| normalized.chars().anyMatch(Character::isWhitespace)) {
 			return false;
 		}
 
+		URI uri;
 		try {
-			URI.create("https://" + normalized);
+			uri = URI.create(normalized);
 		} catch (IllegalArgumentException e) {
 			return false;
 		}
+
+		String scheme = uri.getScheme();
+		if (scheme == null
+				|| (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+			return false;
+		}
+
 		int end = normalized.length();
 		for (int i = 0; i < normalized.length(); i++) {
 			char c = normalized.charAt(i);
@@ -49,35 +82,38 @@ public class ContentParser {
 				break;
 			}
 		}
-		String hostPort = normalized.substring(0, end);
-		hostPort = hostPort.substring(hostPort.lastIndexOf('@') + 1);
+
+		String authority = normalized.substring(
+				normalized.indexOf("://") + 3, end);
+
+		String hostPort = authority.substring(authority.lastIndexOf('@') + 1);
+
 		String host = hostPort;
 		int colon = hostPort.lastIndexOf(':');
+
 		if (colon >= 0 && !hostPort.endsWith("]")) {
 			host = hostPort.substring(0, colon);
 			String port = hostPort.substring(colon + 1);
+
 			if (!port.isEmpty() && !port.chars().allMatch(Character::isDigit)) {
 				return false;
 			}
 		}
+
 		if (host.isEmpty()) {
 			return false;
 		}
+
 		if (host.startsWith("[") && host.endsWith("]")) {
-			return true; // IPv6 literal, syntax already checked by URI
+			return true;
 		}
+
 		try {
 			host = IDN.toASCII(host);
 		} catch (IllegalArgumentException e) {
 			return false;
 		}
+
 		return host.length() <= 253 && HOST.matcher(host).matches();
 	}
-
-	public static boolean isPlainHttp(String raw) {
-		if (raw == null)
-			return false;
-		return raw.replace("\uFEFF", "").stripLeading().regionMatches(true, 0, "http://", 0, 7);
-	}
-
 }
