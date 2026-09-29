@@ -1,3 +1,5 @@
+**English** | [日本語](README.ja.md)
+
 ![CI](https://github.com/harugasumi-works/URL-Status-Checker/actions/workflows/gradle.yml/badge.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
