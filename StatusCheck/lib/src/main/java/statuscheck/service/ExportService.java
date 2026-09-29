@@ -1,8 +1,10 @@
 package statuscheck.service;
 
-import java.util.function.Predicate;
+import java.io.UncheckedIOException;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 
+import javafx.stage.Window;
 import statuscheck.domain.ScanOutput;
 import statuscheck.io.ExportFile;
 import statuscheck.util.ErrorSpecs;
@@ -25,17 +27,19 @@ public final class ExportService {
 	}
 
 	private final Supplier<ScanOutput> source;
-	private final Predicate<ScanOutput> jsonExporter;
-	private final Predicate<ScanOutput> csvExporter;
+	private final Supplier<Window> owner;
+	private final BiPredicate<Window, ScanOutput> jsonExporter;
+	private final BiPredicate<Window, ScanOutput> csvExporter;
 
-	public ExportService(Supplier<ScanOutput> source) {
-		this(source, output -> ExportFile.exportJSON(output.json().get()),
-				output -> ExportFile.exportCSV(output.csv().get()));
+	public ExportService(Supplier<ScanOutput> source, Supplier<Window> owner) {
+		this(source, owner, (window, output) -> ExportFile.exportJSON(window, output.json().get()),
+				(window, output) -> ExportFile.exportCSV(window, output.csv().get()));
 	}
 
-	public ExportService(Supplier<ScanOutput> source, Predicate<ScanOutput> jsonExporter,
-			Predicate<ScanOutput> csvExporter) {
+	public ExportService(Supplier<ScanOutput> source, Supplier<Window> owner,
+			BiPredicate<Window, ScanOutput> jsonExporter, BiPredicate<Window, ScanOutput> csvExporter) {
 		this.source = source;
+		this.owner = owner;
 		this.jsonExporter = jsonExporter;
 		this.csvExporter = csvExporter;
 	}
@@ -46,13 +50,14 @@ public final class ExportService {
 			if (output == null) {
 				return new Result(Outcome.NOTHING_TO_EXPORT, null);
 			}
-			Predicate<ScanOutput> exporter = switch (format) {
+			BiPredicate<Window, ScanOutput> exporter = switch (format) {
 			case JSON -> jsonExporter;
 			case CSV -> csvExporter;
 			};
-			return new Result(exporter.test(output) ? Outcome.EXPORTED : Outcome.CANCELED, null);
+			return new Result(exporter.test(owner.get(), output) ? Outcome.EXPORTED : Outcome.CANCELED, null);
 		} catch (Exception e) {
-			return new Result(Outcome.FAILED, ErrorSpecs.describe(e));
+			Exception cause = e instanceof UncheckedIOException u && u.getCause() != null ? u.getCause() : e;
+			return new Result(Outcome.FAILED, ErrorSpecs.describe(cause));
 		}
 	}
 }

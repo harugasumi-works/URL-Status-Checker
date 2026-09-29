@@ -14,6 +14,7 @@ import statuscheck.domain.RowItem;
 import statuscheck.domain.ScanRequest;
 import statuscheck.domain.ScanResult;
 import statuscheck.session.SessionStore;
+import statuscheck.util.ErrorSpecs;
 import statuscheck.util.FxThread;
 
 public final class ScanService {
@@ -65,7 +66,7 @@ public final class ScanService {
 		task.setOnFailed(_ -> {
 			finish();
 			Throwable error = task.getException();
-			notifier.accept("Scan failed unexpectedly" + (error != null ? ": " + describe(error) : ""));
+			notifier.accept("Scan failed unexpectedly" + (error != null ? ": " + ErrorSpecs.describe(error) : ""));
 		});
 
 		current = task;
@@ -98,7 +99,4 @@ public final class ScanService {
 		scanning.set(false);
 	}
 
-	private static String describe(Throwable error) {
-		return error.getMessage() != null ? error.getMessage() : error.getClass().getSimpleName();
-	}
 }

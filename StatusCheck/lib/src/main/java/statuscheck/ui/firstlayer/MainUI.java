@@ -1,21 +1,15 @@
 package statuscheck.ui.firstlayer;
 
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import statuscheck.domain.Fail;
 import statuscheck.domain.RowItem;
 import statuscheck.domain.ScanRequest;
 import statuscheck.domain.Success;
-import statuscheck.service.ExportService;
-import statuscheck.service.ImportService;
-import statuscheck.service.ScanService;
 import statuscheck.session.Session;
 import statuscheck.session.SessionStore;
 import statuscheck.ui.AppState;
-import statuscheck.ui.PopUp;
 import statuscheck.util.ContentParser;
-import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.transformation.SortedList;
 import javafx.geometry.Insets;
@@ -40,18 +34,11 @@ public class MainUI {
 	private final AppState appState;
 	private final MainButtons buttons;
 
-	public MainUI(Session session, AppState appState) {
-	    this.session = session;
-	    this.store = session.store();
-	    this.appState = appState;
-
-	    Consumer<String> notifier = msg -> Platform.runLater(() -> PopUp.message(msg));
-	    ScanService scan = new ScanService(store, notifier);
-	    appState.scanningProperty().bind(scan.scanningProperty());
-
-	    this.buttons = new MainButtons(store, appState, scan,
-	            new ExportService(session::currentOutput),
-	            new ImportService(store), notifier);
+	public MainUI(Session session, AppState appState, MainButtons buttons) {
+		this.session = session;
+		this.store = session.store();
+		this.appState = appState;
+		this.buttons = buttons;
 	}
 
 	public TextField input() {
@@ -126,7 +113,6 @@ public class MainUI {
 		return table;
 	}
 
-	// The column factories need no session state, so they stay static.
 
 	public static TableColumn<RowItem, String> urlColumn() {
 		TableColumn<RowItem, String> col = new TableColumn<>("URL");

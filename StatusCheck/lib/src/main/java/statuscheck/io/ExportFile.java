@@ -2,44 +2,42 @@ package statuscheck.io;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.util.function.Supplier;
 
 import statuscheck.domain.CSV;
 import statuscheck.domain.JSON;
-import statuscheck.ui.PopUp;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
-import javafx.stage.Stage;
+import javafx.stage.Window;
 
 public class ExportFile {
-	
-	public static boolean exportJSON(JSON body) {
-        return export(new ExtensionFilter("JSON Files (*.json)", "*.json"), body::data);
-    }
 
-    public static boolean exportCSV(CSV body) {
-        return export(new ExtensionFilter("CSV Files (*.csv)", "*.csv"), body::data);
-    }
+	public static boolean exportJSON(Window owner, JSON body) {
+		return export(owner, new ExtensionFilter("JSON Files (*.json)", "*.json"), body::data);
+	}
 
-    private static boolean export(ExtensionFilter filter, Supplier<String> content) {
-    	Stage stage = new Stage();
-        FileChooser chooser = new FileChooser();
-        chooser.getExtensionFilters().add(filter);
-        chooser.setSelectedExtensionFilter(filter);
+	public static boolean exportCSV(Window owner, CSV body) {
+		return export(owner, new ExtensionFilter("CSV Files (*.csv)", "*.csv"), body::data);
+	}
 
-        File targetFile = chooser.showSaveDialog(stage);
+	private static boolean export(Window owner, ExtensionFilter filter, Supplier<String> content) {
+		FileChooser chooser = new FileChooser();
+		chooser.getExtensionFilters().add(filter);
+		chooser.setSelectedExtensionFilter(filter);
 
-        if (targetFile == null) {
-            return false;
-        }
+		File targetFile = chooser.showSaveDialog(owner);
 
-        try {
-            Files.writeString(targetFile.toPath(), content.get());
-            return true;
-        } catch (IOException e) {
-            PopUp.message(e.getMessage());
-            return false;
-        }
-    }
+		if (targetFile == null) {
+			return false;
+		}
+
+		try {
+			Files.writeString(targetFile.toPath(), content.get());
+			return true;
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
 }

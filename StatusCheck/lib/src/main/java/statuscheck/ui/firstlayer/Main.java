@@ -1,18 +1,35 @@
 package statuscheck.ui.firstlayer;
 
+import java.util.function.Consumer;
+
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.stage.Stage;
+import statuscheck.service.ExportService;
+import statuscheck.service.ImportService;
+import statuscheck.service.ScanService;
 import statuscheck.session.Session;
+import statuscheck.session.SessionStore;
 import statuscheck.ui.AppState;
+import statuscheck.ui.PopUp;
 
 public class Main extends Application {
 
 	@Override
 	public void start(Stage primaryStage) {
-		// start() runs on the FX thread, which is where Session and AppState must be used.
 		Session session = new Session();
 		AppState appState = new AppState();
-		WindowInit.launch(primaryStage, session, appState);
+		SessionStore store = session.store();
+
+		Consumer<String> notifier = msg -> Platform.runLater(() -> PopUp.message(msg));
+		ScanService scan = new ScanService(store, notifier);
+		appState.scanningProperty().bind(scan.scanningProperty());
+
+		MainButtons buttons = new MainButtons(store, appState, scan,
+				new ExportService(session::currentOutput, () -> primaryStage),
+				new ImportService(store), notifier);
+
+		WindowInit.launch(primaryStage, session, appState, buttons);
 	}
 
 	public static void main(String[] args) {

@@ -16,12 +16,12 @@ import statuscheck.ui.PopUp.CloseChoice;
 
 public class WindowInit {
 
-	public static void launch(Stage stage, Session session, AppState appState) {
+	public static void launch(Stage stage, Session session, AppState appState, MainButtons buttons) {
 		AutoSaveService autosave = session.autosave();
 
 		stage.setMaximized(true);
 		stage.setTitle("URL Status Checker");
-		stage.setScene(new MainUI(session, appState).createMainScene());
+		stage.setScene(new MainUI(session, appState, buttons).createMainScene());
 		stage.setOnCloseRequest(event -> {
 			if (session.store().items().isEmpty()) {
 				autosave.saveNow();
@@ -35,7 +35,6 @@ public class WindowInit {
 			}
 			if (choice == CloseChoice.CANCEL) event.consume();
 		});
-		// Lets the save executor finish queued work and exit once the window is really gone.
 		stage.setOnHidden(_ -> autosave.shutdown());
 
 		List<RowItem> saved = AutoSave.load();

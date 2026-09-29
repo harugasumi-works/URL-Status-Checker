@@ -92,7 +92,7 @@ public class ScanOperator {
 			return new Fail(Instant.now(), 0, "Failed to establish TCP/TLS connection in time: " + e.getMessage());
 
 		}catch (HttpTimeoutException _) {
-			return new Fail(Instant.now(), 0, "Server took too long to response");
+			return new Fail(Instant.now(), 0, "Server took too long to respond");
 		} catch (IOException e) {
 			return new Fail(Instant.now(), 0, "The connection was disrupted: " + ErrorSpecs.describe(e));
 		}
