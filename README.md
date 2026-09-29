@@ -75,7 +75,7 @@ The full list is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#known-limitation
 
 | Document | Contents |
 |---|---|
-| [How to Use](HOW_TO_USE.md) | Using the app, with screenshots |
+| [How to Use](docs/HOW_TO_USE.md) | Using the app, with screenshots |
 | [Architecture](docs/ARCHITECTURE.md) | How it works, DOP + OOP design, trade-offs |
 | [Development](docs/DEVELOPMENT.md) | Requirements, tech stack, testing, project history |
 | [要件定義書](docs/要件定義書.md) / [基本設計書](docs/基本設計書.md) / [詳細設計書](docs/詳細設計書.md) | Formal design documents (Japanese) |
