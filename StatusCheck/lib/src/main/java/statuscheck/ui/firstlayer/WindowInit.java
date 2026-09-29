@@ -8,41 +8,47 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import statuscheck.domain.RowItem;
 import statuscheck.io.AutoSave;
+import statuscheck.session.AutoSaveService;
+import statuscheck.session.Session;
+import statuscheck.ui.AppState;
 import statuscheck.ui.PopUp;
 import statuscheck.ui.PopUp.CloseChoice;
-import statuscheck.ui.UILogic;
 
 public class WindowInit {
 
-	public static void launch(Stage stage) {
+	public static void launch(Stage stage, Session session, AppState appState) {
+		AutoSaveService autosave = session.autosave();
+
 		stage.setMaximized(true);
 		stage.setTitle("URL Status Checker");
-		stage.setScene(MainUI.createMainScene());
+		stage.setScene(new MainUI(session, appState).createMainScene());
 		stage.setOnCloseRequest(event -> {
-			if (UILogic.items.isEmpty()) {
-				UILogic.saveNow();
+			if (session.store().items().isEmpty()) {
+				autosave.saveNow();
 				return;
 			}
 			CloseChoice choice = PopUp.onClose("Save this session before closing?");
-			if (choice == CloseChoice.SAVE) UILogic.saveNow();
+			if (choice == CloseChoice.SAVE) autosave.saveNow();
 			if (choice == CloseChoice.DISCARD) {
-				UILogic.preventAutoSave();
+				autosave.suppress();
 				AutoSave.noSave();
 			}
-			if(choice == CloseChoice.CANCEL) event.consume();
+			if (choice == CloseChoice.CANCEL) event.consume();
 		});
+		// Lets the save executor finish queued work and exit once the window is really gone.
+		stage.setOnHidden(_ -> autosave.shutdown());
 
 		List<RowItem> saved = AutoSave.load();
 		if (!saved.isEmpty()) {
 			if (PopUp.confirm("Restore previous session?")) {
-				UILogic.restoreSession(saved);
+				session.store().restore(saved);
 			} else {
 				AutoSave.discardStoredSession();
 			}
 		}
 		stage.show();
 
-		Timeline autosaveTimer = new Timeline(new KeyFrame(Duration.seconds(20), _ -> UILogic.saveIfDirty()));
+		Timeline autosaveTimer = new Timeline(new KeyFrame(Duration.seconds(20), _ -> autosave.saveIfDirty()));
 		autosaveTimer.setCycleCount(Timeline.INDEFINITE);
 		autosaveTimer.play();
 	}

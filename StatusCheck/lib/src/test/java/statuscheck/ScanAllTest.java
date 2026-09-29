@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
-import statuscheck.concurrency.Operator;
+import statuscheck.concurrency.ScanOperator;
 import statuscheck.domain.Fail;
 import statuscheck.domain.ScanRequest;
 import statuscheck.domain.ScanResult;
@@ -37,7 +37,7 @@ public class ScanAllTest {
 		List<ScanResult> results =
 				Collections.synchronizedList(new ArrayList<>());
 		
-		Operator.scanAll(requests, results::add, () -> {});
+		ScanOperator.scanAll(requests, results::add, () -> {});
 		
 		assertEquals(2, results.size());
 		assertEquals(
@@ -56,7 +56,7 @@ public class ScanAllTest {
 				req("ありがとう")
 		);
 		
-		Operator.scanAll(
+		ScanOperator.scanAll(
 				requests,
 				_ -> counter.incrementAndGet(),
 				() -> {}
@@ -74,7 +74,7 @@ public class ScanAllTest {
 				() -> {
 					List<ScanResult> results = new ArrayList<>();
 					
-					Operator.scanAll(
+					ScanOperator.scanAll(
 							requests,
 							results::add,
 							() -> {}
@@ -96,7 +96,7 @@ public class ScanAllTest {
 		List<ScanResult> results =
 				Collections.synchronizedList(new ArrayList<>());
 		
-		Operator.scanAll(requests, results::add, () -> {});
+		ScanOperator.scanAll(requests, results::add, () -> {});
 		
 		assertEquals(2, results.size());
 		
@@ -125,7 +125,7 @@ public class ScanAllTest {
 		List<ScanResult> results =
 				Collections.synchronizedList(new ArrayList<>());
 
-		Operator.scanAll(requests, results::add, () -> {});
+		ScanOperator.scanAll(requests, results::add, () -> {});
 		
 		var executedIDSet = new HashSet<>(
 				results.stream()
@@ -149,8 +149,8 @@ public class ScanAllTest {
 		List<ScanResult> results2 =
 				Collections.synchronizedList(new ArrayList<>());
 		
-		Operator.scanAll(requests1, results1::add, () -> {});
-		Operator.scanAll(requests2, results2::add, () -> {});
+		ScanOperator.scanAll(requests1, results1::add, () -> {});
+		ScanOperator.scanAll(requests2, results2::add, () -> {});
 		
 		assertEquals(1, results2.size());
 		assertEquals(

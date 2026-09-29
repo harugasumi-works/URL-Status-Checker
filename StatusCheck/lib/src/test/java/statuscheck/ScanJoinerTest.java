@@ -13,14 +13,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import statuscheck.concurrency.CustomJoin;
+import statuscheck.concurrency.ScanJoiner;
 import statuscheck.domain.Fail;
 import statuscheck.domain.ScanRequest;
 import statuscheck.domain.ScanResult;
 import statuscheck.domain.Success;
 
 
-public class CustomJoinTest {
+public class ScanJoinerTest {
 	protected ScanRequest successReq, failReq;
 	protected ScanResult successResult, failResult;
 	protected Callable<ScanResult> successThread, failThread;
@@ -49,7 +49,7 @@ public class CustomJoinTest {
 	@Test
 	public void singleSuccessfulTask_isPassedToCallback() {
 		List<ScanResult> results = new ArrayList<>();
-		var joiner = new CustomJoin(results::add, () -> {});
+		var joiner = new ScanJoiner(results::add, () -> {});
 		
 		try (var scope = StructuredTaskScope.open(joiner)) {		
 			scope.fork(successThread);
@@ -69,7 +69,7 @@ public class CustomJoinTest {
 	@Test
 	public void singleFailTask_isPassedToCallback() {
 		List<ScanResult> results = new ArrayList<>();
-		var joiner = new CustomJoin(results::add, () -> {});
+		var joiner = new ScanJoiner(results::add, () -> {});
 		
 		try (var scope = StructuredTaskScope.open(joiner)) {		
 			scope.fork(failThread);
@@ -91,8 +91,8 @@ public class CustomJoinTest {
 		List<ScanResult> results1 = new ArrayList<>();
 		List<ScanResult> results2 = new ArrayList<>();
 		
-		var joiner1 = new CustomJoin(results1::add, () -> {});
-		var joiner2 = new CustomJoin(results2::add, () -> {});
+		var joiner1 = new ScanJoiner(results1::add, () -> {});
+		var joiner2 = new ScanJoiner(results2::add, () -> {});
 		
 		try (var scope = StructuredTaskScope.open(joiner1)) {		
 			scope.fork(successThread);
@@ -127,7 +127,7 @@ public class CustomJoinTest {
 		AtomicBoolean failSafeTriggered = new AtomicBoolean(false);
 		List<ScanResult> results = new ArrayList<>();
 		
-	    var joiner = new CustomJoin(
+	    var joiner = new ScanJoiner(
 	    		results::add,
 	    		() -> failSafeTriggered.set(true)
 	    );

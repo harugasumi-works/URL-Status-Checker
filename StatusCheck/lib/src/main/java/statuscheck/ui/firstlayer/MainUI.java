@@ -1,14 +1,23 @@
 package statuscheck.ui.firstlayer;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import statuscheck.domain.Fail;
 import statuscheck.domain.RowItem;
 import statuscheck.domain.ScanRequest;
 import statuscheck.domain.Success;
-import statuscheck.ui.UILogic;
+import statuscheck.service.ExportService;
+import statuscheck.service.ImportService;
+import statuscheck.service.ScanService;
+import statuscheck.session.Session;
+import statuscheck.session.SessionStore;
+import statuscheck.ui.AppState;
+import statuscheck.ui.PopUp;
 import statuscheck.util.ContentParser;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.transformation.SortedList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -26,7 +35,26 @@ import javafx.scene.layout.Region;
 
 public class MainUI {
 
-	public static TextField input() {
+	private final Session session;
+	private final SessionStore store;
+	private final AppState appState;
+	private final MainButtons buttons;
+
+	public MainUI(Session session, AppState appState) {
+	    this.session = session;
+	    this.store = session.store();
+	    this.appState = appState;
+
+	    Consumer<String> notifier = msg -> Platform.runLater(() -> PopUp.message(msg));
+	    ScanService scan = new ScanService(store, notifier);
+	    appState.scanningProperty().bind(scan.scanningProperty());
+
+	    this.buttons = new MainButtons(store, appState, scan,
+	            new ExportService(session::currentOutput),
+	            new ImportService(store), notifier);
+	}
+
+	public TextField input() {
 		TextField field = new TextField();
 		field.setPromptText("Type here...");
 		field.setPrefWidth(250);
@@ -37,34 +65,33 @@ public class MainUI {
 				return;
 			}
 			if (ContentParser.isPlainHttp(raw)) {
-				UILogic.notice.set("Only HTTPS is checked. Remove \"http://\" or use https://.");
+				appState.setNotice("Only HTTPS is checked. Remove \"http://\" or use https://.");
 				return;
 			}
 			String input = ContentParser.normalize(raw);
 			if (!ContentParser.isValidURL(input)) {
-				UILogic.notice.set("Not a valid URL: " + raw.strip());
+				appState.setNotice("Not a valid URL: " + raw.strip());
 				return;
 			}
-			if (UILogic.addPending(new ScanRequest(UUID.randomUUID().toString(), input))) {
+			if (store.addPending(new ScanRequest(UUID.randomUUID().toString(), input))) {
 				field.clear();
-				UILogic.notice.set("");
+				appState.setNotice("");
 			} else {
-				UILogic.notice.set("Already in the list: " + input);
+				appState.setNotice("Already in the list: " + input);
 			}
 		};
 
 		field.setOnAction(_ -> addURL.run());
-		field.textProperty().addListener((_, _, _) -> UILogic.notice.set(""));
+		field.textProperty().addListener((_, _, _) -> appState.setNotice(""));
 
 		return field;
-
 	}
 
-	public static ToolBar toolBar() {
-		ToolBar toolbar = new ToolBar(MainButtons.scanButton(), MainButtons.saveButton(), new Label("Enter Text:"),
-				MainUI.input(), MainButtons.deleteAllButton(), MainButtons.bulkImportButton(), new Separator());
+	public ToolBar toolBar() {
+		ToolBar toolbar = new ToolBar(buttons.scanButton(), buttons.saveButton(), new Label("Enter Text:"),
+				input(), buttons.deleteAllButton(), buttons.bulkImportButton(), new Separator());
 
-		toolbar.disableProperty().bind(UILogic.isScanning);
+		toolbar.disableProperty().bind(appState.scanningProperty());
 		return toolbar;
 	}
 
@@ -77,8 +104,12 @@ public class MainUI {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static TableView<RowItem> requestTable() {
-		TableView<RowItem> table = new TableView<>(UILogic.items);
+	public TableView<RowItem> requestTable() {
+		// store.items() is read-only, so column sorting must go through a SortedList.
+		SortedList<RowItem> sorted = new SortedList<>(store.items());
+		TableView<RowItem> table = new TableView<>(sorted);
+		sorted.comparatorProperty().bind(table.comparatorProperty());
+
 		table.setEditable(false);
 		table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
 		table.getColumns().addAll(urlColumn(), statusColumn(), codeColumn(), detailColumn());
@@ -87,21 +118,19 @@ public class MainUI {
 				RowItem selectedItem = table.getSelectionModel().getSelectedItem();
 
 				if (selectedItem != null) {
-					UILogic.removeItem(selectedItem);
+					store.remove(selectedItem);
 					event.consume();
 				}
 			}
 		});
 		return table;
-
 	}
+
+	// The column factories need no session state, so they stay static.
 
 	public static TableColumn<RowItem, String> urlColumn() {
 		TableColumn<RowItem, String> col = new TableColumn<>("URL");
-		col.setCellValueFactory(data -> new SimpleStringProperty(switch (data.getValue()) {
-		case RowItem.Pending p -> p.request().requestedURL();
-		case RowItem.Scanned s -> s.result().context().requestedURL();
-		}));
+		col.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().url()));
 		return col;
 	}
 
@@ -143,27 +172,25 @@ public class MainUI {
 		return col;
 	}
 
-	public static Label updateInfo() {
+	public Label updateInfo() {
 		Label label = new Label();
-		label.textProperty().bind(UILogic.saveStatus);
+		label.textProperty().bind(session.autosave().statusProperty());
 		return label;
 	}
 
-	public static HBox bottomBar() {
+	public HBox bottomBar() {
 		Label noticeLabel = new Label();
-		noticeLabel.textProperty().bind(UILogic.notice);
+		noticeLabel.textProperty().bind(appState.noticeProperty());
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
-		HBox box = new HBox(8, MainButtons.cancelButton(), noticeLabel, spacer, updateInfo());
+		HBox box = new HBox(8, buttons.cancelButton(), noticeLabel, spacer, updateInfo());
 		box.setAlignment(Pos.CENTER_LEFT);
 		box.setPadding(new Insets(4, 10, 4, 10));
 		return box;
 	}
 
-	public static Scene createMainScene() {
-		Scene scene = new Scene(pane(toolBar(), requestTable(), bottomBar()), 800, 600);
-
-		return scene;
+	public Scene createMainScene() {
+		return new Scene(pane(toolBar(), requestTable(), bottomBar()), 800, 600);
 	}
 
 }

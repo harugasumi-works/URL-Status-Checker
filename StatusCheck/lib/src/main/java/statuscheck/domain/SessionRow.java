@@ -1,8 +1,9 @@
 package statuscheck.domain;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
+import java.util.Set;
 
 public record SessionRow(String rowType, String outcome, String id, String url, Instant time, int code, long latency,
 		String reason) {
@@ -46,8 +47,18 @@ public record SessionRow(String rowType, String outcome, String id, String url, 
 	}
 
 	public static List<RowItem> toRowItem(List<SessionRow> rows) {
-		Objects.requireNonNull(rows, "rows");
-		return rows.stream().map(row -> Objects.requireNonNull(row, "null session row").toItem()).toList();
+		if (rows == null)
+			throw new IllegalArgumentException("Session file contains no data");
+
+		Set<String> ids = new HashSet<>();
+		for (SessionRow row : rows) {
+			if (row == null)
+				throw new IllegalArgumentException("Session file contains an empty row");
+			if (!ids.add(row.id()))
+				throw new IllegalArgumentException("Duplicate row id: " + row.id());
+		}
+
+		return rows.stream().map(SessionRow::toItem).toList();
 	}
 
 	private RowItem toItem() {

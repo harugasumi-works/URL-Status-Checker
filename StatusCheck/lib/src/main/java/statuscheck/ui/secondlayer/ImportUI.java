@@ -31,10 +31,10 @@ public class ImportUI {
 		return area;
 	}
 
-	public static HBox buttons(Button add, Button cancle, Button ship) {
+	public static HBox buttons(Button add, Button cancel, Button importButton) {
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
-		HBox box = new HBox(add, cancle, spacer, ship);
+		HBox box = new HBox(add, cancel, spacer, importButton);
 
 		box.setPadding(new Insets(10));
 		return box;

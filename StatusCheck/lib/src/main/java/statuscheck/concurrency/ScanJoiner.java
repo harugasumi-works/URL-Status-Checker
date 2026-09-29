@@ -6,12 +6,12 @@ import java.util.function.Consumer;
 
 import statuscheck.domain.ScanResult;
 
-public class CustomJoin implements StructuredTaskScope.Joiner<ScanResult, Void> {
+public class ScanJoiner implements StructuredTaskScope.Joiner<ScanResult, Void> {
     
     private final Consumer<ScanResult> onResult;
     private final Runnable onTaskFailure;
 
-    public CustomJoin(Consumer<ScanResult> onResult, Runnable onTaskFailure) {
+    public ScanJoiner(Consumer<ScanResult> onResult, Runnable onTaskFailure) {
         this.onResult = onResult;
         this.onTaskFailure = onTaskFailure;
     }

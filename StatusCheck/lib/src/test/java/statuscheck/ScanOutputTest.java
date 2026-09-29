@@ -14,7 +14,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import statuscheck.concurrency.Operator;
+import statuscheck.concurrency.ScanOperator;
 import statuscheck.domain.ExecutionResult;
 import statuscheck.domain.Fail;
 import statuscheck.domain.Outcome;
@@ -105,8 +105,8 @@ public class ScanOutputTest {
 		List<ScanResult> results2 =
 				Collections.synchronizedList(new ArrayList<>());
 		
-		Operator.scanAll(requests1, results1::add, () -> {});
-		Operator.scanAll(requests2, results2::add, () -> {});
+		ScanOperator.scanAll(requests1, results1::add, () -> {});
+		ScanOperator.scanAll(requests2, results2::add, () -> {});
 		
 		var result = new ExecutionResult(
 				results2.stream()

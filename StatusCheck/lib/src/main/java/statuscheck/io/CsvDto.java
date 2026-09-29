@@ -27,20 +27,14 @@ public class CsvDto {
 	}
 	
 	private static String safeSpreadsheetCell(String value) {
-		if (value == null || value.isEmpty()) {
-			return value;
-		}
-		int first = 0;
-		while (first < value.length() && Character.isWhitespace(value.charAt(first))) {
-			first++;
-		}
-		if (first < value.length() && "=+-@".indexOf(value.charAt(first)) >= 0) {
-			return "'" + value;
-		}
-		if (first < value.length() && (value.charAt(first) == '\t' || value.charAt(first) == '\r')) {
-			return "'" + value;
-		}
-		return value;
+	    if (value == null) {
+	        return null;
+	    }
+	    String stripped = value.stripLeading();
+	    if (!stripped.isEmpty() && "=+-@".indexOf(stripped.charAt(0)) >= 0) {
+	        return "'" + value;
+	    }
+	    return value;
 	}
 
 	public static CSV convert(ExecutionResult report) {

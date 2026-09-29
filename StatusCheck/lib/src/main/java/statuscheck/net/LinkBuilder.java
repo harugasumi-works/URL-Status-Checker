@@ -44,7 +44,7 @@ public class LinkBuilder {
 	public static final HttpRequest.Builder requestFactory(String link) {
 		return HttpRequest.newBuilder()
        		 	.uri(URI.create("https://" + toAsciiHost(link)))
-       		 	.timeout(Duration.ofSeconds(5))
+       		 	.timeout(Duration.ofSeconds(4))
  	        	.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
  	        	.header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
  	        	.header("Accept-Language", "en-US,en;q=0.9")
@@ -55,7 +55,7 @@ public class LinkBuilder {
 		return HttpClient.newBuilder()
 				.version(Version.HTTP_3)
 				.followRedirects(HttpClient.Redirect.NORMAL)
-	            .connectTimeout(Duration.ofSeconds(10))
+	            .connectTimeout(Duration.ofSeconds(2))
 	            .build(); 
 	}
 	

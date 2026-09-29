@@ -10,7 +10,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import statuscheck.concurrency.Operator;
+import statuscheck.concurrency.ScanOperator;
 import statuscheck.domain.ExecutionResult;
 import statuscheck.domain.Fail;
 import statuscheck.domain.ScanRequest;
@@ -36,7 +36,7 @@ public class IntegrationTest {
 		List<ScanResult> results =
 				Collections.synchronizedList(new ArrayList<>());
 
-		Operator.scanAll(requests, results::add, () -> {});
+		ScanOperator.scanAll(requests, results::add, () -> {});
 
 		var executionResult = new ExecutionResult(
 				results.stream()
@@ -65,7 +65,7 @@ public class IntegrationTest {
 		List<ScanResult> results =
 				Collections.synchronizedList(new ArrayList<>());
 
-		Operator.scanAll(requests, results::add, () -> {});
+		ScanOperator.scanAll(requests, results::add, () -> {});
 
 		var executionResult = new ExecutionResult(
 				results.stream()

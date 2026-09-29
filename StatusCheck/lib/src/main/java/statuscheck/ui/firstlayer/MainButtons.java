@@ -1,30 +1,9 @@
 package statuscheck.ui.firstlayer;
 
-import statuscheck.concurrency.Operator;
-import statuscheck.domain.RowItem;
-import statuscheck.domain.ScanOutput;
-import statuscheck.domain.ScanRequest;
-import statuscheck.domain.ScanResult;
-import statuscheck.domain.Success;
-import statuscheck.io.ExportFile;
-import statuscheck.io.ImportURLs;
-import statuscheck.ui.PopUp;
-import statuscheck.ui.UILogic;
-import statuscheck.ui.secondlayer.ImportButtons;
-import statuscheck.ui.secondlayer.ImportUI;
-import statuscheck.util.ImportCheck;
+import java.util.Optional;
+import java.util.function.Consumer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.concurrent.Task;
 import javafx.geometry.Side;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
@@ -33,144 +12,71 @@ import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import statuscheck.io.ImportURLs;
+import statuscheck.service.ExportService;
+import statuscheck.service.ImportService;
+import statuscheck.service.ScanService;
+import statuscheck.session.SessionStore;
+import statuscheck.ui.AppState;
+import statuscheck.ui.PopUp;
+import statuscheck.ui.secondlayer.ImportButtons;
+import statuscheck.ui.secondlayer.ImportUI;
 
+/** Builds the buttons and wires them to services. Contains no scan, export or import logic. */
 public class MainButtons {
 
-	private static Task<Void> currentScan;
+	private final SessionStore store;
+	private final AppState appState;
+	private final ScanService scan;
+	private final ExportService export;
+	private final ImportService importer;
+	private final Consumer<String> notifier;
 
-	private static void notifyLater(String message) {
-		Platform.runLater(() -> PopUp.message(message));
+	public MainButtons(SessionStore store, AppState appState, ScanService scan, ExportService export,
+			ImportService importer, Consumer<String> notifier) {
+		this.store = store;
+		this.appState = appState;
+		this.scan = scan;
+		this.export = export;
+		this.importer = importer;
+		this.notifier = notifier;
 	}
 
-	private static String describe(Exception e) {
-		return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+	public void cancelScan() {
+		scan.cancel();
 	}
 
-	public static void cancelScan() {
-		Task<Void> task = currentScan;
-		if (task != null)
-			task.cancel(true);
-	}
-
-	public static Button cancelButton() {
+	public Button cancelButton() {
 		Button button = new Button("Cancel scan");
-		button.disableProperty().bind(UILogic.isScanning.not());
-		button.setOnAction(_ -> cancelScan());
+		button.disableProperty().bind(appState.scanningProperty().not());
+		button.setOnAction(_ -> scan.cancel());
 		return button;
 	}
 
-	private static String summarize(Set<String> scannedIds, int taskFailures) {
-		int ok = 0, failed = 0, notScanned = 0;
-		for (RowItem item : UILogic.items) {
-			switch (item) {
-			case RowItem.Pending p -> {
-				if (scannedIds.contains(p.request().id()))
-					notScanned++;
-			}
-			case RowItem.Scanned s -> {
-				if (scannedIds.contains(s.result().id())) {
-					if (s.result().outcome() instanceof Success)
-						ok++;
-					else
-						failed++;
-				}
-			}
-			}
-		}
-		StringBuilder sb = new StringBuilder("Scan finished: " + ok + " OK, " + failed + " failed");
-		if (notScanned > 0)
-			sb.append(", ").append(notScanned).append(" not scanned");
-		if (taskFailures > 0)
-			sb.append("\n\n").append(taskFailures)
-					.append(" scan task(s) failed unexpectedly; those rows are still pending.");
-		return sb.toString();
-	}
-
-	public static Button scanButton() {
+	public Button scanButton() {
 		Button button = new Button("Scan");
-		button.setOnAction(_ -> {
-			List<ScanRequest> requests = UILogic.items.stream().<ScanRequest>mapMulti((item, consumer) -> {
-				switch (item) {
-				case RowItem.Pending(ScanRequest request) -> consumer.accept(request);
-				case RowItem.Scanned(ScanResult result) -> consumer.accept(result.context());
-				}
-			}).toList();
-			if (requests.isEmpty()) {
-				notifyLater("Failed to scan. Check if the list is empty");
-				return;
-			}
-
-			Set<String> scannedIds = requests.stream().map(ScanRequest::id).collect(Collectors.toSet());
-			AtomicInteger taskFailures = new AtomicInteger();
-
-			Task<Void> task = new Task<Void>() {
-				@Override
-				protected Void call() throws InterruptedException {
-					Operator.scanAll(requests, UILogic::onScanCompleted, taskFailures::incrementAndGet);
-					return null;
-				}
-			};
-
-			task.setOnSucceeded(_ -> {
-				currentScan = null;
-				notifyLater(summarize(scannedIds, taskFailures.get()));
-			});
-			task.setOnCancelled(_ -> {
-				currentScan = null;
-				notifyLater("Scan cancelled.");
-			});
-			task.setOnFailed(_ -> {
-				currentScan = null;
-				Throwable error = task.getException();
-				notifyLater("Scan failed unexpectedly" + (error != null
-						? ": " + (error.getMessage() != null ? error.getMessage() : error.getClass().getSimpleName())
-						: ""));
-			});
-
-			currentScan = task;
-			UILogic.isScanning.unbind();
-			UILogic.isScanning.bind(task.runningProperty());
-
-			Thread thread = new Thread(task, "url-scan");
-			thread.setDaemon(true);
-			thread.start();
-		});
-
+		button.setOnAction(_ -> scan.start());
 		return button;
 	}
 
-	private static void runExport(Predicate<ScanOutput> exporter) {
-		try {
-			ScanOutput output = UILogic.currentOutput();
-			if (output == null) {
-				notifyLater("Nothing to export yet. Scan at least one URL first.");
-				return;
-			}
-			boolean saved = exporter.test(output);
-			notifyLater(saved ? "Successfully exported" : "Operation canceled");
-		} catch (Exception e) {
-			notifyLater("Operation was interrupted. Reason: " + describe(e));
-		}
-	}
-
-	public static MenuItem json() {
-		MenuItem item = new MenuItem("Export to JSON");
-		item.setOnAction(_ -> runExport(output -> ExportFile.exportJSON(output.json().get())));
+	private MenuItem exportItem(String label, ExportService.Format format) {
+		MenuItem item = new MenuItem(label);
+		item.setOnAction(_ -> notifier.accept(export.export(format).message()));
 		return item;
 	}
 
-	public static MenuItem csv() {
-		MenuItem item = new MenuItem("Export to CSV");
-		item.setOnAction(_ -> runExport(output -> ExportFile.exportCSV(output.csv().get())));
-		return item;
+	public MenuItem json() {
+		return exportItem("Export to JSON", ExportService.Format.JSON);
 	}
 
-	public static SplitMenuButton saveButton() {
+	public MenuItem csv() {
+		return exportItem("Export to CSV", ExportService.Format.CSV);
+	}
+
+	public SplitMenuButton saveButton() {
 		SplitMenuButton button = new SplitMenuButton("Save");
-
 		button.setPopupSide(Side.RIGHT);
 		button.getItems().addAll(json(), csv());
-
 		button.setOnAction(_ -> {
 			if (button.isShowing()) {
 				button.hide();
@@ -178,24 +84,22 @@ public class MainButtons {
 				button.show();
 			}
 		});
-
-		button.disableProperty().bind(UILogic.hasData.not());
+		button.disableProperty().bind(store.hasDataProperty().not());
 		return button;
 	}
 
-	public static Button deleteAllButton() {
+	public Button deleteAllButton() {
 		Button button = new Button("Clear all");
 		button.setOnAction(_ -> {
 			if (PopUp.confirm("Are you sure you want to clear all items?")) {
-				UILogic.wipeOut();
+				store.clear();
 			}
 		});
-		button.disableProperty().bind(Bindings.isEmpty(UILogic.items));
+		button.disableProperty().bind(Bindings.isEmpty(store.items()));
 		return button;
 	}
 
-	
-	public static Button bulkImportButton() {
+	public Button bulkImportButton() {
 		Button button = new Button("Bulk Import");
 
 		button.setOnAction(_ -> {
@@ -207,44 +111,22 @@ public class MainButtons {
 
 			Button add = ImportButtons.addButton();
 			add.setOnAction(_ -> {
-				ImportCheck parsed = ImportCheck.parseImport(area.getText());
-
-				if (parsed.valid().isEmpty()) {
-					notifyLater("Enter at least one URL before adding.");
+				Optional<ImportService.Report> result = importer.addFrom(area.getText());
+				if (result.isEmpty()) {
+					notifier.accept("Enter at least one URL before adding.");
 					return;
 				}
-
-				int added = 0, duplicates = 0;
-				for (String link : parsed.valid()) {
-					if (UILogic.addPending(new ScanRequest(UUID.randomUUID().toString(), link))) {
-						added++;
-					} else {
-						duplicates++;
-					}
-				}
+				ImportService.Report report = result.get();
 				// Keep only the rejected lines in the box so the user can fix them.
-				area.setText(String.join("\n", parsed.rejectedLines()));
-
-				List<String> reasons = new ArrayList<>();
-				if (parsed.invalid() > 0)
-					reasons.add(parsed.invalid() + " invalid");
-				if (parsed.http() > 0)
-					reasons.add(parsed.http() + " http:// (only HTTPS is checked)");
-				if (duplicates > 0)
-					reasons.add(duplicates + " duplicate");
-				if (reasons.isEmpty()) {
-					UILogic.notice.set("Added " + added);
-				} else {
-					String msg = "Added " + added + ", skipped " + (parsed.invalid() + parsed.http() + duplicates)
-							+ " (" + String.join(", ", reasons) + ")";
-					UILogic.notice.set(msg);
-					notifyLater(
-							msg + (parsed.rejectedLines().isEmpty() ? "" : "\n\nRejected lines were left in the box."));
+				area.setText(String.join("\n", report.rejectedLines()));
+				appState.setNotice(report.summary());
+				if (report.skipped() > 0) {
+					notifier.accept(report.summary()
+							+ (report.rejectedLines().isEmpty() ? "" : "\n\nRejected lines were left in the box."));
 				}
 			});
-
 			add.disableProperty().bind(Bindings.createBooleanBinding(
-					() -> ImportCheck.parseImport(area.getText()).valid().isEmpty(), area.textProperty()));
+					() -> !ImportService.hasValidUrls(area.getText()), area.textProperty()));
 
 			Button cancel = ImportButtons.cancelButton();
 			cancel.setOnAction(_ -> stage.close());
