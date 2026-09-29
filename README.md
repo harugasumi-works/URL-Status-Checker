@@ -357,7 +357,6 @@ The Gradle build enables Java preview features for compile, test, and run tasks.
 
 - **Java 26** — records, sealed types, pattern matching, and structured concurrency APIs used by the project.
 - **JavaFX 26** — desktop UI and `javafx.concurrent.Task` integration.
-- **`java.net.http.HttpClient`** — shared HTTP/3 client with request/connect timeouts and normal redirect following.
 - **Jackson 3.2.2** — JSON and CSV serialization.
 - **JUnit Jupiter 5.10.2** — unit and integration testing.
 - **Gradle 9.7.1** — build and test automation.
