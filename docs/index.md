@@ -10,9 +10,10 @@ Java 26 の構造化並行性とデータ指向プログラミング(DOP)で構�
 
 ## 技術スタック
 
-- Java 26(構造化並行性、sealed interface、レコード)
+- Java 26
 - JavaFX 26
-- Jackson 3(JSON / CSV変換)
+- Jackson 3
+- Junit 5
 - Gradle
 
 ## リポジトリ
