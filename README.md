@@ -333,7 +333,6 @@ The project was built incrementally. The earlier eight phases describe the origi
 
 - **No dedicated UI/system tester.** The automated suite is primarily unit and service-level testing, plus tagged real-network integration tests. There is no dedicated automated UI test layer.
 - **Solo-development coverage limit.** Since this is a solo-dev project, only surface bugs are fixed; the developer did not account comprehensively for bugs that might arise from the lack of a dedicated tester.
-- **The current Gradle entry point needs synchronization.** `StatusCheck/lib/build.gradle.kts` still names `statuscheck.ui.firstlayer.Main`, while the current source tree contains `statuscheck.ui.main.Main`. The README describes the current source layout, but the Gradle `application.mainClass` setting should be updated to match it before relying on `gradlew run`.
 - **This is a status checker, not a crawler.** It performs GET requests and evaluates the resulting HTTP status. It does not validate page content, application-level health semantics, or whether a page is actually usable to a human.
 - **Redirect chains are not exposed.** Normal redirects are followed, but the full chain and every intermediate response are not preserved in the result model.
 - **Concurrency is intentionally capped at 50 requests.** Larger URL sets are processed in waves rather than with unlimited parallelism.
@@ -373,8 +372,6 @@ The Gradle project is under `StatusCheck/`.
 
 ```bash
 cd StatusCheck
-./gradlew test
-./gradlew integrationTest
 ./gradlew run
 ```
 
@@ -382,13 +379,8 @@ cd StatusCheck
 
 ```bat
 cd StatusCheck
-gradlew.bat test
-gradlew.bat integrationTest
 gradlew.bat run
 ```
-
-The standard `test` task excludes tests tagged `integration`. `integrationTest` runs the real-network tests and therefore requires internet access.
-
 ## Export format examples
 
 CSV shape:
@@ -404,20 +396,25 @@ The exact output depends on the current session. JSON contains the report statis
 
 ## Testing
 
-**Unit tests:**
+Run the tests from `StatusCheck/`. The standard `test` task runs the offline/unit test suite and excludes tests tagged `integration`; `integrationTest` runs the real-network tests and requires internet access.
+
+**macOS / Linux:**
 
 ```bash
 cd StatusCheck
 ./gradlew test
-```
-
-**Integration tests:**
-
-```bash
-cd StatusCheck
 ./gradlew integrationTest
 ```
 
+**Windows:**
+
+```bat
+cd StatusCheck
+gradlew.bat test
+gradlew.bat integrationTest
+```
+
+The test suite covers parsing, import/export services, scanning, session-row conversion, CSV/JSON output, autosave behavior, and URL credential sanitization.
 Integration tests make real HTTPS requests and therefore depend on network access. The repository also includes tests for parsing, import/export services, scanning, session-row conversion, CSV/JSON output, autosave behavior, and URL credential sanitization.
 
 ## Current state
