@@ -334,7 +334,7 @@ The project was built incrementally. The earlier eight phases describe the origi
 
 ## Known limitations
 
-- **Solo-development coverage limit.** Since this is a solo-dev project, no dedicated UI/system test layer; bugs beyond unit/service-level coverage may remain."
+- **Solo-development coverage limit.** No dedicated UI/system test layer: this is a solo project, so bugs beyond unit- and service-level coverage may remain.
 - **This is a status checker, not a crawler.** It performs GET requests and evaluates the resulting HTTP status. It does not validate page content, application-level health semantics, or whether a page is actually usable to a human.
 - **Redirect chains are not exposed.** Normal redirects are followed, but the full chain and every intermediate response are not preserved in the result model.
 - **Concurrency is intentionally capped at 50 requests.** Larger URL sets are processed in waves rather than with unlimited parallelism.
