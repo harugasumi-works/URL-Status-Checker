@@ -4,6 +4,10 @@ A concurrent URL status checker built with modern Java, JavaFX, structured concu
 
 The project started from a Data-Oriented Programming (DOP) approach: domain data is modeled with immutable records and sealed types, while transformations are kept small and composable. The current application is **not pure DOP anymore**. Stateful concerns such as session management, autosave, scanning lifecycle, JavaFX properties, and UI wiring are handled with ordinary objects and services. The result is a deliberate **DOP + OOP hybrid**.
 
+## User Guide
+
+- **[How to Use](docs/HOW_TO_USE.md)** — Installation, adding URLs, scanning, importing, exporting, autosave, and session management.
+
 ## Screenshots
 
 ![Bulk import dialog](.github/assets/bulk-import.png) 
@@ -17,7 +21,7 @@ The project started from a Data-Oriented Programming (DOP) approach: domain data
 ![JSON export result](.github/assets/json.png) 
 ![CSV export result](.github/assets/csv.png) 
 ![Application close confirmation](.github/assets/save-dialog.png) 
-![Session restore prompt](.github/assets/session-restore.png) 
+![Session restore prompt](.github/assets/session-restore-prompt.png) 
 
 
 ## Features
