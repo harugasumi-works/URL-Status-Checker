@@ -21,6 +21,7 @@ import statuscheck.domain.ScanResult;
 import statuscheck.domain.Success;
 import statuscheck.net.LinkBuilder;
 import statuscheck.util.ErrorSpecs;
+import statuscheck.util.UrlCredentialSanitizer;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -73,14 +74,20 @@ public class ScanOperator {
 				long latency = NANOSECONDS.toMillis(System.nanoTime() - begin);
 				closeQuietly(response.body());
 				int code = response.statusCode();
+
 				if (code < 300) {
 					return new Success(start, code, latency);
 				}
+
 				if (code < 400) {
-					String location = response.headers().firstValue("Location").map(l -> " (Location: " + l + ")")
+					String location = response.headers().firstValue("Location")
+							.map(UrlCredentialSanitizer::removeCredentials)
+							.map(l -> " (Location: " + l + ")")
 							.orElse("");
+
 					return new Fail(start, code, "Redirect not followed" + location);
 				}
+
 				return new Fail(start, code, reasonFor(code));
 			} finally {
 				permits.release();
@@ -89,12 +96,14 @@ public class ScanOperator {
 			Thread.currentThread().interrupt();
 			return new Fail(Instant.now(), 0, "The scan was interrupted.");
 		} catch (HttpConnectTimeoutException e) {
-			return new Fail(Instant.now(), 0, "Failed to establish TCP/TLS connection in time: " + e.getMessage());
+			return new Fail(Instant.now(), 0,
+					"Failed to establish TCP/TLS connection in time: " + e.getMessage());
 
-		}catch (HttpTimeoutException _) {
+		} catch (HttpTimeoutException _) {
 			return new Fail(Instant.now(), 0, "Server took too long to respond");
 		} catch (IOException e) {
-			return new Fail(Instant.now(), 0, "The connection was disrupted: " + ErrorSpecs.describe(e));
+			return new Fail(Instant.now(), 0,
+					"The connection was disrupted: " + ErrorSpecs.describe(e));
 		}
 
 	}
@@ -103,14 +112,18 @@ public class ScanOperator {
 		try {
 			return new ScanResult(req.id(), req, scanOperator(req));
 		} catch (RuntimeException e) {
-			return new ScanResult(req.id(), req, new Fail(Instant.now(), 0, "Unexpected error: " + ErrorSpecs.describe(e)));
+			return new ScanResult(req.id(), req,
+					new Fail(Instant.now(), 0,
+							"Unexpected error: " + ErrorSpecs.describe(e)));
 		}
 	}
 
 	@SuppressWarnings("preview")
 	public static void scanAll(List<ScanRequest> requests, Consumer<ScanResult> onResult, Runnable onTaskFailure)
 			throws InterruptedException {
-		List<Callable<ScanResult>> tasks = requests.stream().<Callable<ScanResult>>map(req -> () -> scan(req)).toList();
+		List<Callable<ScanResult>> tasks = requests.stream()
+				.<Callable<ScanResult>>map(req -> () -> scan(req))
+				.toList();
 
 		var joiner = new ScanJoiner(onResult, onTaskFailure);
 		try (var scope = StructuredTaskScope.open(joiner)) {

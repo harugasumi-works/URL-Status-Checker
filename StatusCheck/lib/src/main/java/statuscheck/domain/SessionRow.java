@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import statuscheck.util.UrlCredentialSanitizer;
+
 public record SessionRow(String rowType, String outcome, String id, String url, Instant time, int code, long latency,
 		String reason) {
 
@@ -36,12 +38,34 @@ public record SessionRow(String rowType, String outcome, String id, String url, 
 	public static List<SessionRow> toSessionRow(List<RowItem> items) {
 		return items.stream().map(item -> switch (item) {
 		case RowItem.Pending p ->
-			new SessionRow(PENDING, "", p.request().id(), p.request().requestedURL(), null, 0, 0, "");
+			new SessionRow(
+					PENDING,
+					"",
+					p.request().id(),
+					UrlCredentialSanitizer.removeCredentials(p.request().requestedURL()),
+					null,
+					0,
+					0,
+					"");
 		case RowItem.Scanned s -> switch (s.result()) {
-		case ScanResult(String id, ScanRequest context, Success outcome) -> new SessionRow(SCANNED, SUCCESS, id,
-				context.requestedURL(), outcome.timeStamp(), outcome.statusCode(), outcome.latency(), "");
-		case ScanResult(String id, ScanRequest context, Fail outcome) -> new SessionRow(SCANNED, FAIL, id,
-				context.requestedURL(), outcome.timeStamp(), outcome.statusCode(), 0, outcome.reason());
+		case ScanResult(String id, ScanRequest context, Success outcome) -> new SessionRow(
+				SCANNED,
+				SUCCESS,
+				id,
+				UrlCredentialSanitizer.removeCredentials(context.requestedURL()),
+				outcome.timeStamp(),
+				outcome.statusCode(),
+				outcome.latency(),
+				"");
+		case ScanResult(String id, ScanRequest context, Fail outcome) -> new SessionRow(
+				SCANNED,
+				FAIL,
+				id,
+				UrlCredentialSanitizer.removeCredentials(context.requestedURL()),
+				outcome.timeStamp(),
+				outcome.statusCode(),
+				0,
+				outcome.reason());
 		};
 		}).toList();
 	}

@@ -9,6 +9,7 @@ import statuscheck.domain.ExecutionResult;
 import statuscheck.domain.Fail;
 import statuscheck.domain.ScanResult;
 import statuscheck.domain.Success;
+import statuscheck.util.UrlCredentialSanitizer;
 import tools.jackson.dataformat.csv.CsvMapper;
 import tools.jackson.dataformat.csv.CsvSchema;
 
@@ -18,10 +19,14 @@ public class CsvDto {
 		
 		@SuppressWarnings("preview")
 		public static CsvRow row(ScanResult result) {
-			String url = safeSpreadsheetCell(result.context().requestedURL());
+			String url = safeSpreadsheetCell(
+					UrlCredentialSanitizer.removeCredentials(result.context().requestedURL()));
+
 			return switch (result.outcome()) {
-				case Success(var ts, var code, var latency) -> new CsvRow(ts, url, "Success", code, latency, "");
-				case Fail(var ts, var code, var reason) -> new CsvRow(ts, url, "Fail", code, 0, safeSpreadsheetCell(reason));
+				case Success(var ts, var code, var latency) ->
+					new CsvRow(ts, url, "Success", code, latency, "");
+				case Fail(var ts, var code, var reason) ->
+					new CsvRow(ts, url, "Fail", code, 0, safeSpreadsheetCell(reason));
 			};
 		}
 	}
@@ -57,5 +62,4 @@ public class CsvDto {
 		
 	}
 	
-
 }
