@@ -1,4 +1,4 @@
-package statuscheck;
+package statuscheck.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -17,7 +17,6 @@ import statuscheck.domain.Report;
 import statuscheck.domain.ScanRequest;
 import statuscheck.domain.ScanResult;
 import statuscheck.domain.Success;
-import statuscheck.io.JsonDto;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 

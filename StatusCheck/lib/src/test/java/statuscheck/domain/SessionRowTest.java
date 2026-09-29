@@ -1,4 +1,4 @@
-package statuscheck;
+package statuscheck.domain;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -9,12 +9,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import statuscheck.domain.Fail;
-import statuscheck.domain.RowItem;
-import statuscheck.domain.ScanRequest;
-import statuscheck.domain.ScanResult;
-import statuscheck.domain.SessionRow;
-import statuscheck.domain.Success;
 
 class SessionRowTest {
 	private static final Instant T = Instant.parse("2026-09-28T00:00:00Z");

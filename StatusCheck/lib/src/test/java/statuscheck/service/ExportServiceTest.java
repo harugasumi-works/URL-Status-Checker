@@ -1,4 +1,4 @@
-package statuscheck;
+package statuscheck.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import statuscheck.domain.JSON;
 import statuscheck.domain.CSV;
 import statuscheck.domain.ScanOutput;
-import statuscheck.service.ExportService;
 
 public class ExportServiceTest {
 

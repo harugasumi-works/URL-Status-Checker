@@ -1,4 +1,4 @@
-package statuscheck;
+package statuscheck.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -13,7 +13,6 @@ import statuscheck.domain.RowItem;
 import statuscheck.domain.ScanRequest;
 import statuscheck.domain.ScanResult;
 import statuscheck.domain.Success;
-import statuscheck.service.ScanSummary;
 
 public class ScanSummaryTest {
 	private static final Instant T = Instant.parse("2026-09-28T00:00:00Z");

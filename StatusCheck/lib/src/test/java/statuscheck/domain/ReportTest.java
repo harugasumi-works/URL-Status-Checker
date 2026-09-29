@@ -1,4 +1,4 @@
-package statuscheck;
+package statuscheck.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -9,14 +9,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import statuscheck.domain.CountStat;
-import statuscheck.domain.ExecutionResult;
-import statuscheck.domain.Fail;
-import statuscheck.domain.Outcome;
-import statuscheck.domain.Report;
-import statuscheck.domain.ScanRequest;
-import statuscheck.domain.ScanResult;
-import statuscheck.domain.Success;
 
 public class ReportTest {
 

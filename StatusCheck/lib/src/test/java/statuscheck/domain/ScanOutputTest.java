@@ -1,4 +1,4 @@
-package statuscheck;
+package statuscheck.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,12 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import statuscheck.concurrency.ScanOperator;
-import statuscheck.domain.ExecutionResult;
-import statuscheck.domain.Fail;
-import statuscheck.domain.Outcome;
-import statuscheck.domain.ScanRequest;
-import statuscheck.domain.ScanResult;
-import statuscheck.domain.Success;
 import statuscheck.io.ReturnOutput;
 
 public class ScanOutputTest {

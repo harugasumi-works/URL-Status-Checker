@@ -1,4 +1,4 @@
-package statuscheck;
+package statuscheck.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -18,7 +18,6 @@ import statuscheck.domain.Fail;
 import statuscheck.domain.ScanRequest;
 import statuscheck.domain.ScanResult;
 import statuscheck.domain.Success;
-import statuscheck.io.CsvDto;
 import statuscheck.io.CsvDto.CsvRow;
 import tools.jackson.databind.MappingIterator;
 import tools.jackson.dataformat.csv.CsvMapper;

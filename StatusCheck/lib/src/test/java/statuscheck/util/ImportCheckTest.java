@@ -1,10 +1,8 @@
-package statuscheck;
+package statuscheck.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
-
-import statuscheck.util.ImportCheck;
 
 public class ImportCheckTest {
 

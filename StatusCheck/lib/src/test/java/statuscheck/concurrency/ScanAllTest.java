@@ -1,4 +1,4 @@
-package statuscheck;
+package statuscheck.concurrency;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
-import statuscheck.concurrency.ScanOperator;
 import statuscheck.domain.Fail;
 import statuscheck.domain.ScanRequest;
 import statuscheck.domain.ScanResult;
