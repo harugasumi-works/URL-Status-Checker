@@ -18,10 +18,10 @@ public class ContentParser {
 
 		String scheme = "";
 		if (s.regionMatches(true, 0, "http://", 0, 7)) {
-			scheme = s.substring(0, 7);
+			scheme = "http://";
 			s = s.substring(7);
 		} else if (s.regionMatches(true, 0, "https://", 0, 8)) {
-			scheme = s.substring(0, 8);
+			scheme = "https://";
 			s = s.substring(8);
 		}
 
@@ -74,8 +74,10 @@ public class ContentParser {
 			return false;
 		}
 
+		int authorityStart = normalized.indexOf("://") + 3;
+
 		int end = normalized.length();
-		for (int i = 0; i < normalized.length(); i++) {
+		for (int i = authorityStart; i < normalized.length(); i++) {
 			char c = normalized.charAt(i);
 			if (c == '/' || c == '?' || c == '#') {
 				end = i;
@@ -83,9 +85,7 @@ public class ContentParser {
 			}
 		}
 
-		String authority = normalized.substring(
-				normalized.indexOf("://") + 3, end);
-
+		String authority = normalized.substring(authorityStart, end);
 		String hostPort = authority.substring(authority.lastIndexOf('@') + 1);
 
 		String host = hostPort;

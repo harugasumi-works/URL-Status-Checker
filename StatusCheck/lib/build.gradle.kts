@@ -18,7 +18,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("statuscheck.ui.firstlayer.Main")
+    mainClass.set("statuscheck.ui.main.Main")
 }
 
 java {

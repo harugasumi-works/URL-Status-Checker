@@ -13,6 +13,7 @@ import statuscheck.service.ExportService;
 
 public class ExportServiceTest {
 
+	@SuppressWarnings("preview")
 	private ScanOutput output() {
 		return new ScanOutput(
 				null,
@@ -36,11 +37,11 @@ public class ExportServiceTest {
 		ExportService service = new ExportService(
 				this::output,
 				() -> null,
-				(window, value) -> {
+				(_, _) -> {
 					jsonCalls.incrementAndGet();
 					return true;
 				},
-				(window, value) -> {
+				(_, _) -> {
 					csvCalls.incrementAndGet();
 					return true;
 				});
@@ -59,11 +60,11 @@ public class ExportServiceTest {
 		ExportService service = new ExportService(
 				this::output,
 				() -> null,
-				(window, value) -> {
+				(_, _) -> {
 					jsonCalls.incrementAndGet();
 					return true;
 				},
-				(window, value) -> {
+				(_, _) -> {
 					csvCalls.incrementAndGet();
 					return true;
 				});
@@ -80,8 +81,8 @@ public class ExportServiceTest {
 		ExportService service = new ExportService(
 				this::output,
 				() -> null,
-				(window, value) -> false,
-				(window, value) -> false);
+				(_, _) -> false,
+				(_, _) -> false);
 
 		ExportService.Result result = service.export(ExportService.Format.JSON);
 
@@ -93,10 +94,10 @@ public class ExportServiceTest {
 		ExportService service = new ExportService(
 				this::output,
 				() -> null,
-				(window, value) -> {
+				(_, _) -> {
 					throw new IllegalStateException("export failed");
 				},
-				(window, value) -> true);
+				(_, _) -> true);
 
 		ExportService.Result result = service.export(ExportService.Format.JSON);
 
