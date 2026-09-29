@@ -75,7 +75,7 @@ public class AutoSave {
 				launchSnapshot = raw;
 				return items;
 			} catch (IOException | RuntimeException e) {
-				e.printStackTrace();
+				Dialogs.message(ErrorSpecs.describe(e));
 				Path backup = moveAside();
 				problem = backup != null
 						? "Your previous session could not be read. A copy was saved to " + backup
@@ -103,7 +103,6 @@ public class AutoSave {
 			}
 		}
 		if (failure != null) {
-			failure.printStackTrace();
 			Dialogs.message(ErrorSpecs.describe(failure));
 		}
 	}
@@ -114,7 +113,7 @@ public class AutoSave {
 			try {
 				Files.deleteIfExists(path);
 			} catch (IOException e) {
-				e.printStackTrace();
+				Dialogs.message(ErrorSpecs.describe(e));
 			}
 		}
 	}
@@ -137,7 +136,7 @@ public class AutoSave {
 				return target;
 			} catch (FileAlreadyExistsException e) {
 			} catch (IOException e) {
-				e.printStackTrace();
+				Dialogs.message(ErrorSpecs.describe(e));
 				return null;
 			}
 		}
@@ -154,7 +153,7 @@ public class AutoSave {
 				Files.deleteIfExists(backups.get(i));
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			Dialogs.message(ErrorSpecs.describe(e));
 		}
 	}
 
