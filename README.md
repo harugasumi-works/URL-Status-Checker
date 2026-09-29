@@ -10,6 +10,9 @@ The project started from a Data-Oriented Programming (DOP) approach: domain data
 
 - **[How to Use](HOW_TO_USE.md)** — Installation, adding URLs, scanning, importing, exporting, autosave, and session management.
 
+##Sneak Peek
+![Showcase](.github/assets/scan-result.png) 
+
 ## Features
 
 - Check multiple URLs concurrently.
