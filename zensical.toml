@@ -10,7 +10,6 @@ nav = [
 ]
 
 [project.theme]
-language = "jp"
 features = [
   "announce.dismiss",
   "content.code.annotate",
