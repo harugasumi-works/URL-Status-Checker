@@ -6,7 +6,7 @@ The project started from a Data-Oriented Programming (DOP) approach: domain data
 
 ## User Guide
 
-- **[How to Use](docs/HOW_TO_USE.md)** — Installation, adding URLs, scanning, importing, exporting, autosave, and session management.
+- **[How to Use](HOW_TO_USE.md)** — Installation, adding URLs, scanning, importing, exporting, autosave, and session management.
 
 ## Screenshots
 
