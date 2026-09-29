@@ -348,3 +348,18 @@ Integration tests:
 ```
 
 Integration tests perform real network requests and therefore require network access.
+
+## Screenshots
+
+![Bulk import dialog](.github/assets/bulk-import.png) 
+![Bulk import dialog with rejected lines](.github/assets/bulk-import-rejected.png) 
+![Scan in progress with Cancel scan enabled](.github/assets/canceled-scan.png) 
+![Completed scan showing mixed success and failure rows](.github/assets/scan-result.png) 
+![Clear all dialog](.github/assets/clear-all.png)
+![Duplicate-input notification](.github/assets/input-validation.png)
+![Export window](.github/assets/export-dialog.png)
+![Exportation gets canceled](.github/assets/export-canceled.png)
+![JSON export result](.github/assets/json.png) 
+![CSV export result](.github/assets/csv.png) 
+![Application close confirmation](.github/assets/save-dialog.png) 
+![Session restore prompt](.github/assets/session-restore-prompt.png) 
