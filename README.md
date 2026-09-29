@@ -368,8 +368,6 @@ The Gradle build enables Java preview features for compile, test, and run tasks.
 
 The Gradle project is under `StatusCheck/`.
 
-> **Build configuration note:** the current Java source entry point is `statuscheck.ui.main.Main`, while `StatusCheck/lib/build.gradle.kts` still references the older `statuscheck.ui.firstlayer.Main`. Update that setting before invoking the application run task.
-
 **macOS / Linux:**
 
 ```bash
