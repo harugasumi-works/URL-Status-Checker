@@ -1,0 +1,56 @@
+name: Java CI with Gradle
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: StatusCheck
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 26
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "26"
+          cache: gradle
+          cache-dependency-path: |
+            StatusCheck/**/*.gradle*
+            StatusCheck/gradle/wrapper/gradle-wrapper.properties
+            StatusCheck/gradle/libs.versions.toml
+
+      - name: Grant execute permission for Gradle wrapper
+        run: chmod +x ./gradlew
+
+      - name: Build
+        run: ./gradlew assemble --no-daemon --console=plain
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon --console=plain
+
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            StatusCheck/lib/build/test-results/test
+            StatusCheck/lib/build/reports/tests/test
+          if-no-files-found: warn
