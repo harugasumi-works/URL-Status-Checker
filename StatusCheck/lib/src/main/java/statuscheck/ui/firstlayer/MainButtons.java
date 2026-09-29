@@ -12,8 +12,9 @@ import statuscheck.ui.PopUp;
 import statuscheck.ui.UILogic;
 import statuscheck.ui.secondlayer.ImportButtons;
 import statuscheck.ui.secondlayer.ImportUI;
-import statuscheck.util.ContentParser;
+import statuscheck.util.ImportCheck;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -36,6 +37,7 @@ import javafx.stage.Stage;
 public class MainButtons {
 
 	private static Task<Void> currentScan;
+
 	private static void notifyLater(String message) {
 		Platform.runLater(() -> PopUp.message(message));
 	}
@@ -43,8 +45,6 @@ public class MainButtons {
 	private static String describe(Exception e) {
 		return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
 	}
-
-	
 
 	public static void cancelScan() {
 		Task<Void> task = currentScan;
@@ -122,9 +122,9 @@ public class MainButtons {
 			task.setOnFailed(_ -> {
 				currentScan = null;
 				Throwable error = task.getException();
-				notifyLater("Scan failed unexpectedly"
-						+ (error != null ? ": " + (error.getMessage() != null ? error.getMessage()
-								: error.getClass().getSimpleName()) : ""));
+				notifyLater("Scan failed unexpectedly" + (error != null
+						? ": " + (error.getMessage() != null ? error.getMessage() : error.getClass().getSimpleName())
+						: ""));
 			});
 
 			currentScan = task;
@@ -194,54 +194,71 @@ public class MainButtons {
 		return button;
 	}
 
-	private static List<String> normalizedImportURLs(String text) {
-	    return text.lines()
-	            .map(ContentParser::normalize)
-	            .filter(ContentParser::isValidURL)
-	            .toList();
-	}
-
+	
 	public static Button bulkImportButton() {
-	    Button button = new Button("Bulk Import");
+		Button button = new Button("Bulk Import");
 
-	    button.setOnAction(_ -> {
-	        Stage stage = new Stage();
-	        stage.initOwner(button.getScene().getWindow());
-	        stage.initModality(Modality.WINDOW_MODAL);
+		button.setOnAction(_ -> {
+			Stage stage = new Stage();
+			stage.initOwner(button.getScene().getWindow());
+			stage.initModality(Modality.WINDOW_MODAL);
 
-	        TextArea area = ImportUI.inputArea();
+			TextArea area = ImportUI.inputArea();
 
-	        Button add = ImportButtons.addButton();
-	        add.setOnAction(_ -> {
-	            List<String> links = normalizedImportURLs(area.getText());
+			Button add = ImportButtons.addButton();
+			add.setOnAction(_ -> {
+				ImportCheck parsed = ImportCheck.parseImport(area.getText());
 
-	            if (links.isEmpty()) {
-	                notifyLater("Enter at least one URL before adding.");
-	                return;
-	            }
+				if (parsed.valid().isEmpty()) {
+					notifyLater("Enter at least one URL before adding.");
+					return;
+				}
 
-	            links.forEach(link ->
-	                    UILogic.addPending(new ScanRequest(UUID.randomUUID().toString(), link)));
-	            area.clear();
-	        });
+				int added = 0, duplicates = 0;
+				for (String link : parsed.valid()) {
+					if (UILogic.addPending(new ScanRequest(UUID.randomUUID().toString(), link))) {
+						added++;
+					} else {
+						duplicates++;
+					}
+				}
+				// Keep only the rejected lines in the box so the user can fix them.
+				area.setText(String.join("\n", parsed.rejectedLines()));
 
-	        add.disableProperty().bind(Bindings.createBooleanBinding(
-	                () -> normalizedImportURLs(area.getText()).isEmpty(),
-	                area.textProperty()));
+				List<String> reasons = new ArrayList<>();
+				if (parsed.invalid() > 0)
+					reasons.add(parsed.invalid() + " invalid");
+				if (parsed.http() > 0)
+					reasons.add(parsed.http() + " http:// (only HTTPS is checked)");
+				if (duplicates > 0)
+					reasons.add(duplicates + " duplicate");
+				if (reasons.isEmpty()) {
+					UILogic.notice.set("Added " + added);
+				} else {
+					String msg = "Added " + added + ", skipped " + (parsed.invalid() + parsed.http() + duplicates)
+							+ " (" + String.join(", ", reasons) + ")";
+					UILogic.notice.set(msg);
+					notifyLater(
+							msg + (parsed.rejectedLines().isEmpty() ? "" : "\n\nRejected lines were left in the box."));
+				}
+			});
 
-	        Button cancel = ImportButtons.cancelButton();
-	        cancel.setOnAction(_ -> stage.close());
+			add.disableProperty().bind(Bindings.createBooleanBinding(
+					() -> ImportCheck.parseImport(area.getText()).valid().isEmpty(), area.textProperty()));
 
-	        Button importButton = ImportButtons.importFromFilesButton();
-	        importButton.setOnAction(_ -> ImportURLs.urlImport(stage, area));
+			Button cancel = ImportButtons.cancelButton();
+			cancel.setOnAction(_ -> stage.close());
 
-	        HBox box = ImportUI.buttons(add, cancel, importButton);
+			Button importButton = ImportButtons.importFromFilesButton();
+			importButton.setOnAction(_ -> ImportURLs.urlImport(stage, area));
 
-	        stage.setScene(ImportUI.createScene(area, box));
-	        stage.showAndWait();
-	    });
+			HBox box = ImportUI.buttons(add, cancel, importButton);
 
-	    return button;
+			stage.setScene(ImportUI.createScene(area, box));
+			stage.showAndWait();
+		});
+
+		return button;
 	}
 
 }

@@ -33,6 +33,7 @@ public class UILogic {
 	public static BooleanProperty hasData = new SimpleBooleanProperty(false);
 	public static final BooleanProperty isScanning = new SimpleBooleanProperty(false);
 	public static final StringProperty saveStatus = new SimpleStringProperty("Autosave on");
+	public static final StringProperty notice = new SimpleStringProperty("");
 	static volatile boolean dirty = false;
 	private static long changeVersion = 0;
 	private static boolean saveInProgress = false;
@@ -44,15 +45,16 @@ public class UILogic {
 	
 	private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-	public static void addPending(ScanRequest content) {
+	public static boolean addPending(ScanRequest content) {
 		if (!indexRecord.add(content.requestedURL())) {
-			return;
+			return false;
 		}
 		removedIds.remove(content.id());
 		RowItem.Pending pendingItem = new RowItem.Pending(content);
 		itemById.put(content.id(), pendingItem);
 		items.add(pendingItem);
 		markDirty();
+		return true;
 	}
 
 	public static void onScanCompleted(ScanResult content) {
@@ -148,7 +150,7 @@ public class UILogic {
 				} else {
 					saveStatus.set("Autosave failed");
 				}
-				if (dirty) saveIfDirty();
+				if (saved && dirty) saveIfDirty();
 			});
 		});
 	}

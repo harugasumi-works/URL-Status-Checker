@@ -20,7 +20,7 @@ public class ImportURLs {
 		if (selected == null)
 			return;
 		try {
-			String content = Files.readString(selected.toPath());
+			String content = Files.readString(selected.toPath()).replace("\uFEFF", "");
 			List<String> urls = Arrays.stream(content.split("\\s+"))
 	                .map(s -> s.replaceFirst("(?i)^https://", ""))
 	                .filter(s -> !s.isEmpty())
