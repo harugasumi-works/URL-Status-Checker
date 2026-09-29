@@ -1,6 +1,6 @@
 [project]
-site_url = "https://www.example.com/"
-site_name = "Documentation"
+site_url = "https://www.urlstatuschecker-doc.com/"
+site_name = "URLStatusCheckerのドキュメンテーション"
 
 nav = [
   { "プロジェクト" = "index.md" },
