@@ -1,4 +1,4 @@
-package statuscheck.ui.firstlayer;
+package statuscheck.ui.main;
 
 import java.util.List;
 
@@ -11,8 +11,8 @@ import statuscheck.io.AutoSave;
 import statuscheck.session.AutoSaveService;
 import statuscheck.session.Session;
 import statuscheck.ui.AppState;
-import statuscheck.ui.PopUp;
-import statuscheck.ui.PopUp.CloseChoice;
+import statuscheck.ui.dialogs.Dialogs;
+import statuscheck.ui.dialogs.Dialogs.CloseChoice;
 
 public class WindowInit {
 
@@ -27,7 +27,7 @@ public class WindowInit {
 				autosave.saveNow();
 				return;
 			}
-			CloseChoice choice = PopUp.onClose("Save this session before closing?");
+			CloseChoice choice = Dialogs.onClose("Save this session before closing?");
 			if (choice == CloseChoice.SAVE) autosave.saveNow();
 			if (choice == CloseChoice.DISCARD) {
 				autosave.suppress();
@@ -39,7 +39,7 @@ public class WindowInit {
 
 		List<RowItem> saved = AutoSave.load();
 		if (!saved.isEmpty()) {
-			if (PopUp.confirm("Restore previous session?")) {
+			if (Dialogs.confirm("Restore previous session?")) {
 				session.store().restore(saved);
 			} else {
 				AutoSave.discardStoredSession();

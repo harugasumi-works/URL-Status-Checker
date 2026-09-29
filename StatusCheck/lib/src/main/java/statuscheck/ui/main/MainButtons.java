@@ -1,4 +1,4 @@
-package statuscheck.ui.firstlayer;
+package statuscheck.ui.main;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -18,9 +18,9 @@ import statuscheck.service.ImportService;
 import statuscheck.service.ScanService;
 import statuscheck.session.SessionStore;
 import statuscheck.ui.AppState;
-import statuscheck.ui.PopUp;
-import statuscheck.ui.secondlayer.ImportButtons;
-import statuscheck.ui.secondlayer.ImportUI;
+import statuscheck.ui.dialogs.Dialogs;
+import statuscheck.ui.importdialog.ImportButtons;
+import statuscheck.ui.importdialog.ImportUI;
 
 /** Builds the buttons and wires them to services. Contains no scan, export or import logic. */
 public class MainButtons {
@@ -91,7 +91,7 @@ public class MainButtons {
 	public Button deleteAllButton() {
 		Button button = new Button("Clear all");
 		button.setOnAction(_ -> {
-			if (PopUp.confirm("Are you sure you want to clear all items?")) {
+			if (Dialogs.confirm("Are you sure you want to clear all items?")) {
 				store.clear();
 			}
 		});

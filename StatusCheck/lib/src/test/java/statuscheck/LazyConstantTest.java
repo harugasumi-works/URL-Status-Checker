@@ -16,29 +16,29 @@ public class LazyConstantTest {
 	@SuppressWarnings("preview")
 	@Test
 	void supplierInvokedOnceUnderConcurrentFirstAccess() throws Exception {
-	    AtomicInteger calls = new AtomicInteger();
-	    LazyConstant<String> lazy = LazyConstant.of(() -> {
-	        calls.incrementAndGet();
-	        return "value";
-	    });
+		AtomicInteger calls = new AtomicInteger();
+		LazyConstant<String> lazy = LazyConstant.of(() -> {
+			calls.incrementAndGet();
+			return "value";
+		});
 
-	    var n = 10;
-	    var pool = Executors.newFixedThreadPool(n);
-	    var ready = new CountDownLatch(n);
-	    var go = new CountDownLatch(1);
-	    List<Future<String>> futures = new ArrayList<>();
-	    for (int i = 0; i < n; i++) {
-	        futures.add(pool.submit(() -> {
-	            ready.countDown();
-	            go.await();
-	            return lazy.get();
-	        }));
-	    }
-	    ready.await();
-	    go.countDown();
-	    for (var f : futures) f.get();
-	    pool.shutdown();
+		var n = 10;
+		var pool = Executors.newFixedThreadPool(n);
+		var ready = new CountDownLatch(n);
+		var go = new CountDownLatch(1);
+		List<Future<String>> futures = new ArrayList<>();
+		for (int i = 0; i < n; i++) {
+			futures.add(pool.submit(() -> {
+				ready.countDown();
+				go.await();
+				return lazy.get();
+			}));
+		}
+		ready.await();
+		go.countDown();
+		for (var f : futures) f.get();
+		pool.shutdown();
 
-	    assertEquals(1, calls.get());
+		assertEquals(1, calls.get());
 	}
 }

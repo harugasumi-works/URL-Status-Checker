@@ -1,4 +1,4 @@
-package statuscheck.ui.firstlayer;
+package statuscheck.ui.main;
 
 import java.util.UUID;
 

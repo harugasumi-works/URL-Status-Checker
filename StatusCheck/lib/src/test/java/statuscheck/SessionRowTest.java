@@ -50,7 +50,8 @@ class SessionRowTest {
 
 	@Test
 	void scannedRowWithoutOutcomeIsRejected() {
-		assertThrows(IllegalArgumentException.class, () -> new SessionRow("Scanned", null, "1", "a.com", T, 200, 1, ""));
+		assertThrows(IllegalArgumentException.class,
+				() -> new SessionRow("Scanned", null, "1", "a.com", T, 200, 1, ""));
 	}
 
 	@Test
@@ -61,19 +62,46 @@ class SessionRowTest {
 
 	@Test
 	void unknownOrMissingRowTypeIsRejected() {
-		assertThrows(IllegalArgumentException.class, () -> new SessionRow("Done", "Success", "1", "a.com", T, 200, 1, ""));
-		assertThrows(IllegalArgumentException.class, () -> new SessionRow(null, "Success", "1", "a.com", T, 200, 1, ""));
+		assertThrows(IllegalArgumentException.class,
+				() -> new SessionRow("Done", "Success", "1", "a.com", T, 200, 1, ""));
+		assertThrows(IllegalArgumentException.class,
+				() -> new SessionRow(null, "Success", "1", "a.com", T, 200, 1, ""));
 	}
 
 	@Test
 	void missingIdOrUrlIsRejected() {
-		assertThrows(IllegalArgumentException.class, () -> new SessionRow("Pending", "", null, "a.com", null, 0, 0, ""));
-		assertThrows(IllegalArgumentException.class, () -> new SessionRow("Pending", "", "1", " ", null, 0, 0, ""));
+		assertThrows(IllegalArgumentException.class,
+				() -> new SessionRow("Pending", "", null, "a.com", null, 0, 0, ""));
+		assertThrows(IllegalArgumentException.class,
+				() -> new SessionRow("Pending", "", "1", " ", null, 0, 0, ""));
 	}
 
 	@Test
 	void scannedRowWithoutTimeIsRejected() {
 		assertThrows(IllegalArgumentException.class,
 				() -> new SessionRow("Scanned", "Success", "1", "a.com", null, 200, 1, ""));
+	}
+
+	@Test
+	void duplicateRowIdIsRejected() {
+		SessionRow first = new SessionRow("Pending", "", "1", "a.com", null, 0, 0, "");
+		SessionRow second = new SessionRow("Pending", "", "1", "b.com", null, 0, 0, "");
+
+		assertThrows(IllegalArgumentException.class, () -> SessionRow.toRowItem(List.of(first, second)));
+	}
+
+	@Test
+	void nullRowIsRejected() {
+		assertThrows(IllegalArgumentException.class, () -> SessionRow.toRowItem(java.util.Arrays.asList((SessionRow) null)));
+	}
+
+	@Test
+	void credentialsAreRemovedBeforeSessionPersistence() {
+		RowItem item = new RowItem.Pending(
+				new ScanRequest("1", "https://user:pass@example.com/path"));
+
+		SessionRow row = SessionRow.toSessionRow(List.of(item)).get(0);
+
+		assertEquals("https://example.com/path", row.url());
 	}
 }

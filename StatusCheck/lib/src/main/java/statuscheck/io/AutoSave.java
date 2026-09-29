@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 import javafx.application.Platform;
 import statuscheck.domain.RowItem;
 import statuscheck.domain.SessionRow;
-import statuscheck.ui.PopUp;
+import statuscheck.ui.dialogs.Dialogs;
 import statuscheck.util.ErrorSpecs;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -82,7 +82,7 @@ public class AutoSave {
 						: "Your previous session could not be read.";
 			}
 		}
-		PopUp.message(problem);
+		Dialogs.message(problem);
 		return List.of();
 	}
 
@@ -104,7 +104,7 @@ public class AutoSave {
 		}
 		if (failure != null) {
 			failure.printStackTrace();
-			PopUp.message(ErrorSpecs.describe(failure));
+			Dialogs.message(ErrorSpecs.describe(failure));
 		}
 	}
 
@@ -164,7 +164,7 @@ public class AutoSave {
 			return;
 		saveFailureReported = true;
 		String message = "Could not save session: " + ErrorSpecs.describe(e);
-		Platform.runLater(() -> PopUp.message(message));
+		Platform.runLater(() -> Dialogs.message(message));
 	}
 
 }

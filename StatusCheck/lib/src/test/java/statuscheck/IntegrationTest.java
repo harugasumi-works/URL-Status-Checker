@@ -1,5 +1,6 @@
 package statuscheck;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -18,10 +19,9 @@ import statuscheck.domain.ScanResult;
 import statuscheck.domain.Success;
 import statuscheck.io.ReturnOutput;
 
-
 @Tag("integration")
 public class IntegrationTest {
-	protected List<String> correctUrls = List.of("www.google.com", "www.wyz.wyz");
+	protected List<String> correctUrls = List.of("https://example.com", "http://example.com");
 	protected List<String> illegalUrls = List.of("asd asd asd", "ありがとうございます。");
 
 	@Test
@@ -49,8 +49,11 @@ public class IntegrationTest {
 
 		var output = ReturnOutput.output(executionResult);
 
-		assertTrue(output.json().get().data().contains("www.google.com"));
-		assertTrue(output.csv().get().data().contains("www.google.com"));
+		assertEquals(2, results.size());
+		assertTrue(output.json().get().data().contains("https://example.com"));
+		assertTrue(output.json().get().data().contains("http://example.com"));
+		assertTrue(output.csv().get().data().contains("https://example.com"));
+		assertTrue(output.csv().get().data().contains("http://example.com"));
 	}
 
 	@Test
@@ -78,8 +81,8 @@ public class IntegrationTest {
 
 		var output = ReturnOutput.output(executionResult);
 
+		assertEquals(2, results.size());
 		assertTrue(output.json().get().data().contains("Illegal"));
 		assertTrue(output.csv().get().data().contains("Illegal"));
 	}
-
 }

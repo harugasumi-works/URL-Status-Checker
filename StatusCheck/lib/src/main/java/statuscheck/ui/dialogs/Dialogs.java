@@ -1,4 +1,4 @@
-package statuscheck.ui;
+package statuscheck.ui.dialogs;
 
 import java.util.Optional;
 
@@ -8,7 +8,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 
-public class PopUp {
+public class Dialogs {
 
     public static void message(String message) {
         Runnable show = () -> {

@@ -9,7 +9,7 @@ import java.util.List;
 import javafx.scene.control.TextArea;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import statuscheck.ui.PopUp;
+import statuscheck.ui.dialogs.Dialogs;
 
 public class ImportURLs {
 
@@ -33,7 +33,7 @@ public class ImportURLs {
 
 			area.setText(String.join("\n", urls));
 		} catch (IOException e) {
-			PopUp.message("Could not read file: " + e.getMessage());
+			Dialogs.message("Could not read file: " + e.getMessage());
 		}
 	}
 }

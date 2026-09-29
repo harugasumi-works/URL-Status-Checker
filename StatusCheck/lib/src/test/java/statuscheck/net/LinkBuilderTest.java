@@ -9,31 +9,50 @@ public class LinkBuilderTest {
 
 	@Test
 	void asciiLinksAreLeftUntouched() {
-		assertEquals("example.com", LinkBuilder.toAsciiHost("example.com"));
-		assertEquals("example.com/path?q=1", LinkBuilder.toAsciiHost("example.com/path?q=1"));
-		assertEquals("[::1]:8080/x", LinkBuilder.toAsciiHost("[::1]:8080/x"));
+		assertEquals("https://example.com", LinkBuilder.toAsciiHost("https://example.com"));
+		assertEquals("http://example.com/path?q=1", LinkBuilder.toAsciiHost("http://example.com/path?q=1"));
+		assertEquals("https://[::1]:8080/x", LinkBuilder.toAsciiHost("https://[::1]:8080/x"));
 	}
 
 	@Test
 	void nonAsciiHostBecomesPunycode() {
-		assertEquals("xn--wgv71a119e.jp", LinkBuilder.toAsciiHost("日本語.jp"));
+		assertEquals("https://xn--wgv71a119e.jp", LinkBuilder.toAsciiHost("https://日本語.jp"));
 	}
 
 	@Test
 	void onlyTheHostIsConverted() {
-		assertEquals("xn--wgv71a119e.jp/パス?q=1", LinkBuilder.toAsciiHost("日本語.jp/パス?q=1"));
-		assertEquals("xn--wgv71a119e.jp:8443/x", LinkBuilder.toAsciiHost("日本語.jp:8443/x"));
-		assertEquals("user@xn--wgv71a119e.jp", LinkBuilder.toAsciiHost("user@日本語.jp"));
-		assertEquals("example.com/日本語", LinkBuilder.toAsciiHost("example.com/日本語"));
+		assertEquals("https://xn--wgv71a119e.jp/パス?q=1", LinkBuilder.toAsciiHost("https://日本語.jp/パス?q=1"));
+		assertEquals("http://xn--wgv71a119e.jp:8443/x", LinkBuilder.toAsciiHost("http://日本語.jp:8443/x"));
+		assertEquals("https://user@xn--wgv71a119e.jp", LinkBuilder.toAsciiHost("https://user@日本語.jp"));
+		assertEquals("https://example.com/日本語", LinkBuilder.toAsciiHost("https://example.com/日本語"));
+	}
+
+	@Test
+	void linksWithoutSchemeAreLeftUntouched() {
+		assertEquals("example.com/path?q=1", LinkBuilder.toAsciiHost("example.com/path?q=1"));
+		assertEquals("日本語.jp/path", LinkBuilder.toAsciiHost("日本語.jp/path"));
 	}
 
 	@Test
 	void invalidNonAsciiHostThrowsIllegalArgument() {
-		assertThrows(IllegalArgumentException.class, () -> LinkBuilder.toAsciiHost("日本語..jp"));
+		assertThrows(IllegalArgumentException.class, () -> LinkBuilder.toAsciiHost("https://日本語..jp"));
 	}
 
 	@Test
-	void requestFactoryAcceptsInternationalizedHost() {
+	void requestFactoryAddsHttpsByDefault() {
+		assertEquals("https", LinkBuilder.requestFactory("example.com").build().uri().getScheme());
+		assertEquals("example.com", LinkBuilder.requestFactory("example.com").build().uri().getHost());
+	}
+
+	@Test
+	void requestFactoryPreservesHttpScheme() {
+		assertEquals("http", LinkBuilder.requestFactory("http://example.com").build().uri().getScheme());
+		assertEquals("example.com", LinkBuilder.requestFactory("http://example.com").build().uri().getHost());
+	}
+
+	@Test
+	void requestFactoryConvertsInternationalizedHost() {
 		assertEquals("xn--wgv71a119e.jp", LinkBuilder.requestFactory("日本語.jp").build().uri().getHost());
+		assertEquals("http", LinkBuilder.requestFactory("http://日本語.jp").build().uri().getScheme());
 	}
 }

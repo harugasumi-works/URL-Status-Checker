@@ -1,4 +1,4 @@
-package statuscheck.ui.firstlayer;
+package statuscheck.ui.main;
 
 import java.util.function.Consumer;
 
@@ -11,7 +11,7 @@ import statuscheck.service.ScanService;
 import statuscheck.session.Session;
 import statuscheck.session.SessionStore;
 import statuscheck.ui.AppState;
-import statuscheck.ui.PopUp;
+import statuscheck.ui.dialogs.Dialogs;
 
 public class Main extends Application {
 
@@ -21,7 +21,7 @@ public class Main extends Application {
 		AppState appState = new AppState();
 		SessionStore store = session.store();
 
-		Consumer<String> notifier = msg -> Platform.runLater(() -> PopUp.message(msg));
+		Consumer<String> notifier = msg -> Platform.runLater(() -> Dialogs.message(msg));
 		ScanService scan = new ScanService(store, notifier);
 		appState.scanningProperty().bind(scan.scanningProperty());
 

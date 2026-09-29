@@ -1,4 +1,4 @@
-package statuscheck.ui.secondlayer;
+package statuscheck.ui.importdialog;
 
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
