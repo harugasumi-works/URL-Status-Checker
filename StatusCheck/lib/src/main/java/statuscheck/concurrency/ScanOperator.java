@@ -85,7 +85,7 @@ public class ScanOperator {
 							.map(l -> " (Location: " + l + ")")
 							.orElse("");
 
-					return new Fail(start, code, "Redirect not followed" + location);
+					return new Fail(start, code, "Redirect not completed" + location);
 				}
 
 				return new Fail(start, code, reasonFor(code));

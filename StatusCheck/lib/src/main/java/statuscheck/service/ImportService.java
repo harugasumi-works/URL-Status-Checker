@@ -41,12 +41,10 @@ public final class ImportService {
 		this.store = store;
 	}
 
-	/** Cheap check, e.g. for enabling an "Add" button. */
 	public static boolean hasValidUrls(String text) {
 		return !ImportCheck.parseImport(text).valid().isEmpty();
 	}
 
-	/** FX thread only. Returns empty when the text contains no valid URL. */
 	public Optional<Report> addFrom(String text) {
 		FxThread.require();
 
