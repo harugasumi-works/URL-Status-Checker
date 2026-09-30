@@ -36,7 +36,7 @@ public class AutoSave {
 	private static volatile boolean saveFailureReported;
 
 	public static boolean save(List<RowItem> items) {
-		Exception failure = null;
+		Exception failure;
 		synchronized (IO_LOCK) {
 			if (discarded) {
 				return false; 
