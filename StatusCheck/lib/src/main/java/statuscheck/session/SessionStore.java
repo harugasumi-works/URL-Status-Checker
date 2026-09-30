@@ -81,10 +81,12 @@ public final class SessionStore {
 				return;
 			}
 			RowItem removed = items.remove(idx.intValue());
-			if (removed instanceof RowItem.Scanned) {
-				scannedCount--;
+			if (removed != null) {
+				if (removed instanceof RowItem.Scanned) {
+					scannedCount--;
+				}
+				knownUrls.remove(removed.url());
 			}
-			knownUrls.remove(removed.url());
 			reindexFrom(idx);
 			refreshHasData();
 			onChanged.run();
